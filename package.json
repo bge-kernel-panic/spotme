@@ -1,0 +1,18 @@
+{
+  "name": "opencode-spotter",
+  "version": "0.1.0",
+  "description": "Spotter — gym mode for agentic coding. OpenCode plugin that scaffolds exercises and reviews your work.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.7.0"
+  }
+}
