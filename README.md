@@ -6,7 +6,7 @@ Instead of writing 100% of the code for you, the agent scaffolds a logical unit,
 
 > "Keep your edge."
 
-Works with **OpenCode**, **Pi**, and **Claude Code** (and any coding harness that supports SKILL.md skills via the [AgentSkills standard](https://agentskills.io)).
+Works with **OpenCode** and **Pi** (and any coding harness that supports SKILL.md skills via the [AgentSkills standard](https://agentskills.io)).
 
 ---
 
@@ -65,40 +65,6 @@ Or add to `opencode.json` once published to npm:
 
 The `src/opencode.ts` file is the plugin entry point.
 
-### Claude Code (CLI plugin)
-
-Copy or symlink the `plugin/` directory:
-```bash
-# Project-level
-ln -s /path/to/spotter/plugin .claude/plugins/spotter
-
-# Or load at runtime
-claude --plugin-dir /path/to/spotter/plugin
-```
-
-Commands registered: `/spotter:on`, `/spotter:off`, `/spotter:done`, `/spotter:hint`, `/spotter:solve`, `/spotter:skip`, `/spotter:rep`, `/spotter:status`
-
-The MCP server runs automatically (via `.mcp.json`). The PreToolUse hook (`hooks/hooks.json`) gates Write/Edit/MultiEdit calls.
-
-### Claude Code (SDK — programmatic)
-
-```typescript
-import { query } from "@anthropic-ai/claude-agent-sdk";
-import { createSpotterIntegration } from "spotter/claude-code-sdk";
-
-const spotter = createSpotterIntegration("/path/to/project", { every: 3, difficulty: "medium" });
-
-for await (const msg of query({
-  prompt: "/spotter:on",
-  options: {
-    ...spotter.queryOptions(),
-    plugins: [{ type: "local", path: "./plugin" }],
-  }
-})) {
-  console.log(msg);
-}
-```
-
 ### Pi
 
 Copy or symlink into your extensions directory:
@@ -125,14 +91,12 @@ Copy `SKILL.md` into your harness's skills directory. This gives the prompt laye
 
 ## Architecture
 
-Four files (shared core + one adapter per harness):
+Three files:
 
-- **`src/core.ts`** — shared state, types, helpers (harness-agnostic)
-- **`src/opencode.ts`** — OpenCode plugin (`throw` to block, command templates, `tool.execute.before`)
-- **`src/pi.ts`** — Pi extension (`pi.registerTool/Command`, `pi.on("tool_call") → { block: true }`, `pi.sendUserMessage`)
-- **`src/claude-code-sdk.ts`** — Claude Code SDK adapter (`createSpotterIntegration`, PreToolUse hooks, in-process MCP handler)
-- **`plugin/`** — Claude Code CLI plugin (skills → `/spotter:*` commands, `hooks/hooks.json` PreToolUse gate, `bin/spotter-mcp-server.js` MCP server)
-- **`SKILL.md`** — prompt layer, works for any AgentSkills-compatible harness
+- **`src/core.ts`** — shared types, state factory, helper functions. Used by both harness integrations.
+- **`src/opencode.ts`** — OpenCode plugin. Uses `@opencode-ai/plugin` API: custom tool, command templates, `tool.execute.before` hook.
+- **`src/pi.ts`** — Pi extension. Uses `ExtensionAPI`: `pi.registerTool()`, `pi.registerCommand()`, `pi.on("tool_call")`, `pi.sendUserMessage()`.
+- **`SKILL.md`** — Prompt layer (harness-agnostic). Tells the agent how to scaffold at each difficulty, when to stop, and how to review diffs.
 
 ---
 
@@ -143,11 +107,8 @@ Four files (shared core + one adapter per harness):
 Open questions:
 - OpenCode: `command.executed` event shape (args parsing may need adjustment)
 - Pi: `ctx.cwd` availability in tool/command handlers
-- Claude Code: exact npm package name (`@anthropic-ai/claude-agent-sdk` — verify before installing)
-- Claude Code: `CLAUDE_PLUGIN_ROOT` env var availability in hook scripts (needs live test)
-- Claude Code: `$$` PID-based state dir may not isolate correctly across concurrent sessions
-- All: scoped test running after `/spotter:done`
-- All: branch cleanup strategy after review
+- Both: scoped test running after `/spotter:done`
+- Both: branch cleanup strategy after review
 
 ---
 
