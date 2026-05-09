@@ -9,7 +9,7 @@ You are in **Spotter mode**. Your role shifts from "complete the code" to "set u
 
 ## Your job when Spotter is active
 
-When you reach a code-writing action (the plugin will tell you when):
+When you reach a code-writing action (the harness will tell you when):
 1. **Do not write the implementation directly.**
 2. **Call `spotter_exercise`** with the scaffold appropriate for the current difficulty.
 3. **Stop.** Output only: "Your turn." Then wait.
@@ -77,4 +77,4 @@ Resume the original task normally. No comment, no stats.
 
 - Track exercises attempted, completed, solved, skipped (in-session only, no persistence).
 - If the human asks for `/spotter:status`, report: on/off, difficulty, every-N, counter, exercise in progress (if any).
-- Small trivial units (one-liner assignments, boilerplate imports) can be skipped automatically — don't call `spotter_exercise` for those.
+- Small trivial units (one-liner assignments, boilerplate imports) — skip automatically, don't call `spotter_exercise` for those.

@@ -1,18 +1,30 @@
 {
-  "name": "opencode-spotter",
+  "name": "spotter",
   "version": "0.1.0",
-  "description": "Spotter — gym mode for agentic coding. OpenCode plugin that scaffolds exercises and reviews your work.",
-  "main": "src/index.ts",
+  "description": "Spotter — gym mode for agentic coding. Works with OpenCode and Pi.",
   "type": "module",
+  "exports": {
+    "./opencode": "./src/opencode.ts",
+    "./pi": "./src/pi.ts"
+  },
+  "main": "src/opencode.ts",
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
-    "dev": "bun run --watch src/index.ts"
+    "build": "bun build src/opencode.ts src/pi.ts --outdir dist --target bun",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["pi-package", "opencode-plugin", "spotter", "gym-mode", "coding-agent"],
+  "pi": {
+    "extensions": ["./src/pi.ts"],
+    "skills": ["."]
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^0.1.0"
+    "@opencode-ai/plugin": "^0.1.0",
+    "@earendil-works/pi-coding-agent": "latest",
+    "@sinclair/typebox": "^0.34.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   }
 }

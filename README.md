@@ -1,10 +1,12 @@
-# opencode-spotter
+# Spotter
 
 **Gym mode for agentic coding.**
 
-Spotter turns OpenCode into an active learning tool. Instead of writing 100% of the code for you, the agent scaffolds a logical unit, hands it off, watches you implement it, and reviews your work before resuming.
+Instead of writing 100% of the code for you, the agent scaffolds a logical unit, hands it off, watches you implement it, and reviews your work before resuming.
 
 > "Keep your edge."
+
+Works with **OpenCode** and **Pi** (and any coding harness that supports SKILL.md skills via the [AgentSkills standard](https://agentskills.io)).
 
 ---
 
@@ -45,53 +47,68 @@ Spotter turns OpenCode into an active learning tool. Instead of writing 100% of 
 
 ## Install
 
-### Local (project-level)
+### OpenCode
 
+Copy or symlink into your project's plugin directory:
 ```bash
-cp -r . /your-project/.opencode/plugins/spotter
+# Project-level
+ln -s /path/to/spotter .opencode/plugins/spotter
+
+# Global
+ln -s /path/to/spotter ~/.config/opencode/plugins/spotter
 ```
 
-Or symlink:
-```bash
-ln -s /path/to/spotter /your-project/.opencode/plugins/spotter
-```
-
-### Global
-
-```bash
-cp -r . ~/.config/opencode/plugins/spotter
-```
-
-### From npm (once published)
-
-Add to your `opencode.json`:
+Or add to `opencode.json` once published to npm:
 ```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-spotter"]
-}
+{ "plugin": ["spotter"] }
 ```
+
+The `src/opencode.ts` file is the plugin entry point.
+
+### Pi
+
+Copy or symlink into your extensions directory:
+```bash
+# Project-level
+ln -s /path/to/spotter .pi/extensions/spotter
+
+# Global
+ln -s /path/to/spotter ~/.pi/agent/extensions/spotter
+```
+
+Or install as a Pi package once published:
+```bash
+pi install npm:spotter
+```
+
+The `src/pi.ts` file is the extension entry point. Pi auto-discovers it via the `pi.extensions` field in `package.json`.
+
+### Skill only (any harness that supports AgentSkills)
+
+Copy `SKILL.md` into your harness's skills directory. This gives the prompt layer without the automated tool interception — commands still work, but the counter-based trigger won't fire automatically.
 
 ---
 
 ## Architecture
 
-Two layers:
+Three files:
 
-- **`src/index.ts`** — TypeScript plugin. Registers `spotter_exercise` custom tool, intercepts code-writing tool calls, manages session state, handles git branching and diff on submit.
-- **`SKILL.md`** — Prompt layer. Tells the agent when to call `spotter_exercise`, how to write scaffolds at each difficulty, and how to review submitted diffs.
+- **`src/core.ts`** — shared types, state factory, helper functions. Used by both harness integrations.
+- **`src/opencode.ts`** — OpenCode plugin. Uses `@opencode-ai/plugin` API: custom tool, command templates, `tool.execute.before` hook.
+- **`src/pi.ts`** — Pi extension. Uses `ExtensionAPI`: `pi.registerTool()`, `pi.registerCommand()`, `pi.on("tool_call")`, `pi.sendUserMessage()`.
+- **`SKILL.md`** — Prompt layer (harness-agnostic). Tells the agent how to scaffold at each difficulty, when to stop, and how to review diffs.
 
 ---
 
 ## Development status
 
-**v0.1 — working draft**
+**v0.1 — working draft, not yet validated**
 
-Known open questions:
-- `tui.prompt.append` / `tui.toast.show` button support needs live testing
-- Test suite detection and scoped test running
-- Branch cleanup strategy after review
-- `command.executed` event shape (args parsing may need adjustment after dogfooding)
+Open questions:
+- OpenCode: `command.executed` event shape (args parsing may need adjustment)
+- Pi: `ctx.cwd` availability in tool/command handlers
+- Both: scoped test running after `/spotter:done`
+- Both: branch cleanup strategy after review
 
 ---
 
