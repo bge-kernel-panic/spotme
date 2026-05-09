@@ -1,0 +1,6 @@
+{
+  "name": "spotter",
+  "description": "Gym mode for agentic coding. Scaffolds exercises and reviews your work.",
+  "version": "0.1.0",
+  "author": { "name": "wtfzambo" }
+}

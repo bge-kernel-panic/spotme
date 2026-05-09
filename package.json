@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./opencode": "./src/opencode.ts",
-    "./pi": "./src/pi.ts"
+    "./pi": "./src/pi.ts",
+    "./claude-code-sdk": "./src/claude-code-sdk.ts"
   },
   "main": "src/opencode.ts",
   "scripts": {
