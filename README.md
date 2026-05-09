@@ -110,6 +110,10 @@ Open questions:
 - Both: scoped test running after `/spotter:done`
 - Both: branch cleanup strategy after review
 
+### Claude Code
+
+Claude Code has a full first-party plugin API (skills, hooks, MCP) that can support Spotter. Not implemented yet — will be added when there's actual demand. PRs welcome.
+
 ---
 
 ## Name
