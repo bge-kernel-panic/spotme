@@ -5,9 +5,6 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "include-v-in-tag": true,
   "include-component-in-tag": false,
-  "versioning": "prerelease",
-  "prerelease": true,
   "bump-minor-pre-major": true,
-  "release-type": "node",
-  "initial-version": "0.1.0"
+  "release-type": "node"
 }
