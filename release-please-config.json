@@ -8,5 +8,6 @@
   "versioning": "prerelease",
   "prerelease": true,
   "bump-minor-pre-major": true,
-  "release-type": "node"
+  "release-type": "node",
+  "initial-version": "0.1.0"
 }

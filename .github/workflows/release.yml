@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  workflow_dispatch: # Re-enable push trigger when NPM_TOKEN is configured
+  workflow_dispatch:
+  # Enable push trigger when ready for automated releases:
   # push:
   #   branches:
   #     - main
