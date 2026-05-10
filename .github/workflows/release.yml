@@ -20,7 +20,7 @@ jobs:
       releases_created: ${{ steps.release-please.outputs.releases_created }}
       prs_created: ${{ steps.release-please.outputs.prs_created }}
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release-please
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Dispatch publish for releases
         if: needs.process.outputs.releases_created == 'true'
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           event-type: publish-package
@@ -42,7 +42,7 @@ jobs:
 
       - name: Dispatch publish for prerelease
         if: needs.process.outputs.prs_created == 'true'
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           event-type: publish-package
