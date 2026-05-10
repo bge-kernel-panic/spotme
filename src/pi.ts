@@ -4,12 +4,12 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@sinclair/typebox';
 import { exec } from 'child_process';
-import { writeFile } from 'fs/promises';
+import { access } from 'fs/promises';
 import { join } from 'path';
 import { promisify } from 'util';
 import {
   type Difficulty,
-  type SpotterState,
+  type SpotMeState,
   BLOCKED_REASON,
   CODE_WRITE_TOOLS,
   donePrompt,
@@ -30,31 +30,38 @@ async function git(cwd: string, ...args: string[]): Promise<string> {
 }
 
 export default function (pi: ExtensionAPI) {
-  const state: SpotterState = makeState();
+  const state: SpotMeState = makeState();
 
-  // ─── Tool: spotter_exercise ────────────────────────────────────────────────
+  // ─── Tool: spotme_exercise ─────────────────────────────────────────────────
 
   pi.registerTool({
-    name: 'spotter_exercise',
-    label: 'Spotter Exercise',
+    name: 'spotme_exercise',
+    label: 'SpotMe Exercise',
     description:
-      'Set up a Spotter coding exercise. Creates a git branch, writes a scaffold with SPOTTER markers, and hands off to the human. Call this instead of writing the implementation directly when Spotter is active.',
+      'Set up a SpotMe coding exercise. Call this AFTER writing the scaffold with the Write tool. Branches off the current branch, commits the scaffold, and hands off to the human.',
     parameters: Type.Object({
       unit: Type.String({
         description: "Name of the unit being exercised (e.g. 'UserAuth.login')",
       }),
-      filePath: Type.String({ description: 'Relative path to the file to scaffold' }),
-      scaffold: Type.String({
-        description:
-          'The scaffold code. Must include a `# SPOTTER: <description>` marker (or language-appropriate comment) where the human should implement.',
+      filePath: Type.String({
+        description: 'Relative path to the scaffold file (already written to disk)',
       }),
       difficulty: Type.Union([Type.Literal('lite'), Type.Literal('medium'), Type.Literal('hard')], {
         description: 'Difficulty — must match the active session setting',
       }),
     }),
     async execute(_toolCallId, params, _onUpdate, _ctx, _signal) {
-      const { unit, filePath, scaffold, difficulty } = params;
+      const { unit, filePath, difficulty } = params;
       const cwd = process.cwd();
+
+      // Verify file exists before touching git
+      try {
+        await access(join(cwd, filePath));
+      } catch {
+        throw new Error(
+          `Scaffold file not found at ${join(cwd, filePath)}. Write the scaffold with the Write tool first, then call spotme_exercise.`
+        );
+      }
 
       let originalBranch: string;
       try {
@@ -64,7 +71,7 @@ export default function (pi: ExtensionAPI) {
       }
 
       const safeName = unit.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const branchName = `spotter/${safeName}`;
+      const branchName = `spotme/${safeName}`;
 
       try {
         await git(cwd, 'checkout', '-b', branchName);
@@ -72,9 +79,8 @@ export default function (pi: ExtensionAPI) {
         await git(cwd, 'checkout', branchName);
       }
 
-      await writeFile(join(cwd, filePath), scaffold, 'utf8');
       await git(cwd, 'add', filePath);
-      await git(cwd, 'commit', '-m', `spotter: scaffold ${unit}`);
+      await git(cwd, 'commit', '-m', `spotme: scaffold ${unit}`);
 
       state.exercise = {
         active: true,
@@ -93,39 +99,51 @@ export default function (pi: ExtensionAPI) {
 
   // ─── Commands ─────────────────────────────────────────────────────────────
 
-  pi.registerCommand('spotter:on', {
-    description: 'Enable Spotter gym mode [lite|medium|hard] [--every N]',
+  pi.registerCommand('spotme:on', {
+    description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
     handler: async (args, _ctx) => {
       const parsed = parseArgs(args ?? '', state);
+      const cwd = process.cwd();
+
+      // Ensure a git repo exists — init one if not
+      let gitNote = '';
+      try {
+        await execAsync('git rev-parse --is-inside-work-tree', { cwd });
+      } catch {
+        await execAsync('git init', { cwd });
+        await execAsync('git commit --allow-empty -m "chore: init repo for SpotMe"', { cwd });
+        gitNote = ' (git repo initialised)';
+      }
+
       state.enabled = true;
       state.difficulty = parsed.difficulty;
       state.every = parsed.every;
       state.counter = 0;
       state.exercise = null;
       pi.sendUserMessage(
-        `Spotter is now on. Difficulty: ${state.difficulty}, triggering every ${state.every} code write(s). Confirm: "🏋️ Spotter is on." Then continue normally.`
+        `SpotMe is now on${gitNote}. Difficulty: ${state.difficulty}, triggering every ${state.every} code write(s). Confirm: "🏋️ SpotMe is on." Then continue normally.`
       );
     },
   });
 
-  pi.registerCommand('spotter:off', {
-    description: 'Disable Spotter gym mode',
+  pi.registerCommand('spotme:off', {
+    description: 'Disable SpotMe gym mode',
     handler: async (_args, _ctx) => {
       state.enabled = false;
       state.exercise = null;
       state.counter = 0;
-      pi.sendUserMessage('Spotter is now off. Resume writing code normally. Confirm briefly.');
+      pi.sendUserMessage('SpotMe is now off. Resume writing code normally. Confirm briefly.');
     },
   });
 
-  pi.registerCommand('spotter:status', {
-    description: 'Show current Spotter status',
+  pi.registerCommand('spotme:status', {
+    description: 'Show current SpotMe status',
     handler: async (_args, ctx) => {
       ctx.ui.notify(statusMessage(state), 'info');
     },
   });
 
-  pi.registerCommand('spotter:done', {
+  pi.registerCommand('spotme:done', {
     description: 'Submit your implementation for review',
     handler: async (_args, ctx) => {
       const cwd = ctx.cwd ?? process.cwd();
@@ -138,10 +156,12 @@ export default function (pi: ExtensionAPI) {
 
       if (state.exercise) {
         const orig = state.exercise.originalBranch;
+        const tempBranch = state.exercise.branch;
         state.exercise = null;
         state.counter = 0;
         try {
           await git(cwd, 'checkout', orig);
+          await git(cwd, 'branch', '-d', tempBranch);
         } catch {
           /* ignore */
         }
@@ -151,23 +171,25 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand('spotter:hint', {
+  pi.registerCommand('spotme:hint', {
     description: 'Get a targeted hint for the current exercise',
     handler: async () => {
       pi.sendUserMessage(HINT_PROMPT);
     },
   });
 
-  pi.registerCommand('spotter:solve', {
+  pi.registerCommand('spotme:solve', {
     description: 'Concede — let the agent complete the exercise',
     handler: async (_args, ctx) => {
       const cwd = ctx.cwd ?? process.cwd();
       if (state.exercise) {
         const orig = state.exercise.originalBranch;
+        const tempBranch = state.exercise.branch;
         state.exercise = null;
         state.counter = 0;
         try {
           await git(cwd, 'checkout', orig);
+          await git(cwd, 'branch', '-d', tempBranch);
         } catch {
           /* ignore */
         }
@@ -176,16 +198,18 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand('spotter:skip', {
+  pi.registerCommand('spotme:skip', {
     description: 'Skip this exercise with no penalty',
     handler: async (_args, ctx) => {
       const cwd = ctx.cwd ?? process.cwd();
       if (state.exercise) {
         const orig = state.exercise.originalBranch;
+        const tempBranch = state.exercise.branch;
         state.exercise = null;
         state.counter = 0;
         try {
           await git(cwd, 'checkout', orig);
+          await git(cwd, 'branch', '-d', tempBranch);
         } catch {
           /* ignore */
         }
@@ -194,11 +218,11 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand('spotter:rep', {
-    description: 'Request an on-demand Spotter exercise',
+  pi.registerCommand('spotme:rep', {
+    description: 'Request an on-demand SpotMe exercise',
     handler: async () => {
       pi.sendUserMessage(
-        'The human wants to do an exercise. Call `spotter_exercise` for the next logical unit you were going to implement. Scaffold it and hand off.'
+        'The human wants a coding exercise. Write the scaffold for the next logical unit using the Write tool (use a `# SPOTME: <description>` marker where the human should implement), then call `spotme_exercise` with the unit name, file path, and difficulty.'
       );
     },
   });

@@ -1,9 +1,10 @@
 ---
 id: SPO-2
 title: Fix 'every' setting not applied to trigger threshold
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-10 09:24'
+updated_date: '2026-05-10 12:07'
 labels:
   - bug
 dependencies: []
@@ -24,3 +25,9 @@ Template bakes in defaults (medium, 2) at plugin init via string interpolation. 
 
 Root cause: command templates use ${state.difficulty}/${state.every} evaluated at plugin load time (makeState() defaults: medium/2). Event handler correctly updates state after command.executed fires, but LLM already received the stale template. Fix: generate template dynamically inside the event handler, or replace template with a spotme_on tool that sets state and returns confirmation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Same fix as SPO-1. The spotme_on tool sets state.difficulty and state.every at call time; the tool.execute.before hook reads state.every at runtime so the counter threshold is always correct.
+<!-- SECTION:FINAL_SUMMARY:END -->

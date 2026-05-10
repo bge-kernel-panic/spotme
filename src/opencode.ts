@@ -4,10 +4,9 @@
 import { type Plugin, tool } from '@opencode-ai/plugin';
 import {
   type Difficulty,
-  type SpotterState,
+  type SpotMeState,
   BLOCKED_REASON,
   CODE_WRITE_TOOLS,
-  donePrompt,
   exerciseReadyMessage,
   HINT_PROMPT,
   makeState,
@@ -17,34 +16,68 @@ import {
   statusMessage,
 } from './core.js';
 
-export const SpotterPlugin: Plugin = async ({ $, directory }) => {
-  const state: SpotterState = makeState();
+export const SpotMePlugin: Plugin = async ({ $, directory }) => {
+  const state: SpotMeState = makeState();
 
   async function getCurrentBranch(): Promise<string> {
     return (await $`git -C ${directory} branch --show-current`.text()).trim();
   }
 
-  // ─── Custom tool ───────────────────────────────────────────────────────────
+  // ─── Tools ────────────────────────────────────────────────────────────────
 
-  const spotter_exercise = tool({
+  const spotme_on = tool({
+    description: 'Activate SpotMe gym mode with the specified difficulty and frequency.',
+    args: {
+      difficulty: tool.schema.enum(['lite', 'medium', 'hard']).describe('Exercise difficulty'),
+      every: tool.schema
+        .number()
+        .describe('How many code writes before triggering an exercise (default: 2)'),
+    },
+    async execute(args) {
+      // Ensure a git repo exists — init one if not
+      let gitNote = '';
+      try {
+        await $`git -C ${directory} rev-parse --is-inside-work-tree`.quiet();
+      } catch {
+        await $`git -C ${directory} init`.quiet();
+        await $`git -C ${directory} commit --allow-empty -m "chore: init repo for SpotMe"`.quiet();
+        gitNote = ' (git repo initialised)';
+      }
+
+      state.enabled = true;
+      state.difficulty = args.difficulty as Difficulty;
+      state.every = Math.max(1, Math.floor(args.every));
+      state.counter = 0;
+      state.exercise = null;
+      return `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s). Use \`spotme_exercise\` when the counter is reached.`;
+    },
+  });
+
+  const spotme_exercise = tool({
     description:
-      'Set up a Spotter coding exercise. Creates a git branch, writes a scaffold with SPOTTER markers, and hands off to the human. Call this instead of writing the implementation directly when Spotter is active.',
+      'Set up a SpotMe coding exercise. Call this AFTER writing the scaffold with the Write tool. Branches off the current branch, commits the scaffold, and hands off to the human.',
     args: {
       unit: tool.schema
         .string()
         .describe("Name of the unit being exercised (e.g. 'UserAuth.login')"),
-      filePath: tool.schema.string().describe('Relative path to the file to scaffold'),
-      scaffold: tool.schema
+      filePath: tool.schema
         .string()
-        .describe(
-          'The scaffold code. Must include a `# SPOTTER: <description>` marker (or language-appropriate comment) where the human should implement.'
-        ),
+        .describe('Relative path to the scaffold file (already written to disk)'),
       difficulty: tool.schema
         .enum(['lite', 'medium', 'hard'])
         .describe('Difficulty — must match the active session setting'),
     },
     async execute(args) {
-      const { unit, filePath, scaffold, difficulty } = args;
+      const { unit, filePath, difficulty } = args;
+
+      // Verify file exists before touching git
+      const fullPath = `${directory}/${filePath}`;
+      const file = Bun.file(fullPath);
+      if (!(await file.exists())) {
+        throw new Error(
+          `Scaffold file not found at ${fullPath}. Write the scaffold with the Write tool first, then call spotme_exercise.`
+        );
+      }
 
       let originalBranch: string;
       try {
@@ -54,7 +87,7 @@ export const SpotterPlugin: Plugin = async ({ $, directory }) => {
       }
 
       const safeName = unit.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const branchName = `spotter/${safeName}`;
+      const branchName = `spotme/${safeName}`;
 
       try {
         await $`git -C ${directory} checkout -b ${branchName}`.quiet();
@@ -62,10 +95,8 @@ export const SpotterPlugin: Plugin = async ({ $, directory }) => {
         await $`git -C ${directory} checkout ${branchName}`.quiet();
       }
 
-      const fullPath = `${directory}/${filePath}`;
-      await Bun.write(fullPath, scaffold);
       await $`git -C ${directory} add ${filePath}`.quiet();
-      await $`git -C ${directory} commit -m "spotter: scaffold ${unit}"`.quiet();
+      await $`git -C ${directory} commit -m "spotme: scaffold ${unit}"`.quiet();
 
       state.exercise = {
         active: true,
@@ -81,33 +112,47 @@ export const SpotterPlugin: Plugin = async ({ $, directory }) => {
     },
   });
 
+  const spotme_status = tool({
+    description:
+      'Show the current SpotMe session status (enabled, difficulty, counter, active exercise).',
+    args: {},
+    async execute() {
+      return statusMessage(state);
+    },
+  });
+
   // ─── Commands ─────────────────────────────────────────────────────────────
 
   const commands = {
-    'spotter:on': {
-      description: 'Enable Spotter gym mode',
-      template: `You are now in Spotter mode. Difficulty: ${state.difficulty}. Every ${state.every} code write(s), call \`spotter_exercise\` to scaffold the next unit instead of writing it directly. Confirm: "🏋️ Spotter is on."`,
-    },
-    'spotter:off': {
-      description: 'Disable Spotter gym mode',
+    'spotme:on': {
+      description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
       template:
-        'Confirm that Spotter gym mode is now off and you will resume writing code normally.',
+        'The user wants to enable SpotMe. Parse any difficulty (lite/medium/hard) and frequency (--every N) from their message — if not specified use current defaults (medium, every 2). Then call `spotme_on` with those values.',
     },
-    'spotter:status': {
-      description: 'Show current Spotter status',
-      template: statusMessage(state),
-    },
-    'spotter:done': {
-      description: 'Submit your implementation for Spotter review',
-      template: `The human has finished the exercise. Run: !git diff HEAD\n\nThen ${donePrompt('<diff from above>')}`,
-    },
-    'spotter:hint': { description: 'Get a hint', template: HINT_PROMPT },
-    'spotter:solve': { description: 'Concede — let the agent finish', template: SOLVE_PROMPT },
-    'spotter:skip': { description: 'Skip this exercise', template: SKIP_PROMPT },
-    'spotter:rep': {
-      description: 'Request an on-demand exercise',
+    'spotme:off': {
+      description: 'Disable SpotMe gym mode',
       template:
-        'The human wants to do an exercise. Call `spotter_exercise` for the next logical unit you were going to implement.',
+        'Confirm that SpotMe gym mode is now off and you will resume writing code normally.',
+    },
+    'spotme:status': {
+      description: 'Show current SpotMe status',
+      template: 'Call the `spotme_status` tool and display the result to the user.',
+    },
+    'spotme:done': {
+      description: 'Submit your implementation for SpotMe review',
+      template:
+        'Run `git diff HEAD` to get the diff of the current exercise branch, then review the implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. After the review, resume the original task.',
+    },
+    'spotme:hint': { description: 'Get a hint for the current exercise', template: HINT_PROMPT },
+    'spotme:solve': {
+      description: 'Concede — let the agent finish the exercise',
+      template: SOLVE_PROMPT,
+    },
+    'spotme:skip': { description: 'Skip this exercise', template: SKIP_PROMPT },
+    'spotme:rep': {
+      description: 'Request an on-demand SpotMe exercise',
+      template:
+        'The human wants a coding exercise. Write the scaffold for the next logical unit using the Write tool (use a `# SPOTME: <description>` marker where the human should implement), then call `spotme_exercise` with the unit name, file path, and difficulty.',
     },
   };
 
@@ -121,7 +166,7 @@ export const SpotterPlugin: Plugin = async ({ $, directory }) => {
       }
     },
 
-    tool: { spotter_exercise },
+    tool: { spotme_on, spotme_exercise, spotme_status },
 
     'tool.execute.before': async (input) => {
       if (!state.enabled || state.exercise?.active) return;
@@ -135,29 +180,28 @@ export const SpotterPlugin: Plugin = async ({ $, directory }) => {
 
     event: async ({ event }) => {
       if (event.type !== 'command.executed') return;
-      const cmd = (event as any).properties?.name ?? '';
-      const rawArgs = (event as any).properties?.args ?? '';
+      // TypeScript narrows event to EventCommandExecuted here — no cast needed
+      const cmd = event.properties.name;
+      const rawArgs = event.properties.arguments;
 
-      if (cmd === 'spotter:on') {
+      if (cmd === 'spotme:off') {
+        // Also honour parseArgs in case someone passes args via the off command
         const parsed = parseArgs(rawArgs, state);
-        state.enabled = true;
+        state.enabled = false;
         state.difficulty = parsed.difficulty;
         state.every = parsed.every;
-        state.counter = 0;
-        state.exercise = null;
-      }
-      if (cmd === 'spotter:off') {
-        state.enabled = false;
         state.exercise = null;
         state.counter = 0;
       }
-      if (cmd === 'spotter:done' || cmd === 'spotter:solve' || cmd === 'spotter:skip') {
+      if (cmd === 'spotme:done' || cmd === 'spotme:solve' || cmd === 'spotme:skip') {
         if (state.exercise) {
           const orig = state.exercise.originalBranch;
+          const tempBranch = state.exercise.branch;
           state.exercise = null;
           state.counter = 0;
           try {
             await $`git -C ${directory} checkout ${orig}`.quiet();
+            await $`git -C ${directory} branch -d ${tempBranch}`.quiet();
           } catch {
             /* ignore */
           }

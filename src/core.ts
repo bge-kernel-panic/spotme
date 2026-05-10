@@ -12,7 +12,7 @@ export interface ExerciseState {
   difficulty: Difficulty;
 }
 
-export interface SpotterState {
+export interface SpotMeState {
   enabled: boolean;
   difficulty: Difficulty;
   every: number;
@@ -20,7 +20,7 @@ export interface SpotterState {
   exercise: ExerciseState | null;
 }
 
-export function makeState(): SpotterState {
+export function makeState(): SpotMeState {
   return {
     enabled: false,
     difficulty: 'medium',
@@ -43,7 +43,7 @@ export function difficultyLabel(d: Difficulty): string {
 
 export function parseArgs(
   args: string,
-  current: Pick<SpotterState, 'difficulty' | 'every'>
+  current: Pick<SpotMeState, 'difficulty' | 'every'>
 ): { difficulty: Difficulty; every: number } {
   let difficulty = current.difficulty;
   let every = current.every;
@@ -73,14 +73,19 @@ export function exerciseReadyMessage(
     `Difficulty: ${difficulty} — ${difficultyLabel(difficulty)}`,
     `File: \`${filePath}\``,
     ``,
-    `Edit the file in your editor. Replace the \`# SPOTTER:\` marker with your implementation.`,
-    `When done: \`/spotter:done\` · Hint: \`/spotter:hint\` · Concede: \`/spotter:solve\` · Skip: \`/spotter:skip\``,
+    `Edit the file in your editor. Replace the \`# SPOTME:\` marker with your implementation.`,
+    ``,
+    `Your options:`,
+    `  \`/spotme:hint\`  — get a targeted hint`,
+    `  \`/spotme:solve\` — concede and let the agent finish`,
+    `  \`/spotme:skip\`  — skip this exercise`,
+    `  \`/spotme:done\`  — submit your implementation for review`,
   ].join('\n');
 }
 
-export function statusMessage(state: SpotterState): string {
+export function statusMessage(state: SpotMeState): string {
   const lines = [
-    `Spotter: ${state.enabled ? '🟢 on' : '⚪ off'}`,
+    `SpotMe: ${state.enabled ? '🟢 on' : '⚪ off'}`,
     `Difficulty: ${state.difficulty}`,
     `Trigger every: ${state.every} code write(s)`,
     `Counter: ${state.counter}/${state.every}`,
@@ -91,9 +96,9 @@ export function statusMessage(state: SpotterState): string {
   return lines.join('\n');
 }
 
-// Prompt injected when user calls /spotter:done
+// Prompt injected when user calls /spotme:done
 export function donePrompt(diff: string): string {
-  return `The human has finished implementing the Spotter exercise. Here is their diff:
+  return `The human has finished implementing the SpotMe exercise. Here is their diff:
 
 \`\`\`diff
 ${diff}
@@ -108,7 +113,7 @@ Do NOT show your own solution. Feedback only. After the review, resume the origi
 }
 
 export const HINT_PROMPT =
-  'Give one targeted hint for the current Spotter exercise. Point toward the approach without revealing the implementation. One paragraph max.';
+  'Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.';
 
 export const SOLVE_PROMPT =
   'The human has conceded this exercise. Complete the implementation. Briefly note the key pattern they should remember. Then resume the original task.';
@@ -117,4 +122,4 @@ export const SKIP_PROMPT =
   'The human is skipping this exercise. Resume the original task and complete the code normally.';
 
 export const BLOCKED_REASON =
-  '[Spotter] Counter reached — scaffold the next unit using the `spotter_exercise` tool instead of writing it directly.';
+  '[SpotMe] Counter reached — scaffold the next unit using the `spotme_exercise` tool instead of writing it directly.';

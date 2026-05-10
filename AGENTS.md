@@ -317,8 +317,8 @@ Bad Example (Implementation Step):
 
 The very first things you must do when you take over a task are:
 
-* set the task in progress
-* assign it to yourself
+- set the task in progress
+- assign it to yourself
 
 ```bash
 # Example
@@ -442,14 +442,14 @@ backlog task edit 42 -s Done
 
 A task is **Done** only when **ALL** of the following are complete:
 
-### ✅ Via CLI Commands:
+### ✅ Via CLI Commands
 
 1. **All acceptance criteria checked**: Use `backlog task edit <id> --check-ac <index>` for each
 2. **All Definition of Done items checked**: Use `backlog task edit <id> --check-dod <index>` for each
 3. **Final Summary added**: Use `backlog task edit <id> --final-summary "..."`
 4. **Status set to Done**: Use `backlog task edit <id> -s Done`
 
-### ✅ Via Code/Testing:
+### ✅ Via Code/Testing
 
 5. **Tests pass**: Run test suite and linting
 6. **Documentation updated**: Update relevant docs if needed

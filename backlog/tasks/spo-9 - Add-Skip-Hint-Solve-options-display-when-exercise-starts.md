@@ -1,9 +1,10 @@
 ---
 id: SPO-9
 title: Add Skip / Hint / Solve options display when exercise starts
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-10 09:24'
+updated_date: '2026-05-10 12:07'
 labels:
   - feature
 dependencies: []
@@ -16,3 +17,9 @@ ordinal: 9000
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Make exerciseReadyMessage show the available commands prominently so the user knows their options.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+exerciseReadyMessage now shows all four options (hint/solve/skip/done) in a clearly formatted block at the end of the exercise ready message.
+<!-- SECTION:FINAL_SUMMARY:END -->

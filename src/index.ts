@@ -1,5 +1,5 @@
 // spotme — main entry point
 // OpenCode plugin + type exports
 
-export type { Difficulty, ExerciseState, SpotterState } from './core.js';
-export { SpotterPlugin } from './opencode.js';
+export type { Difficulty, ExerciseState, SpotMeState } from './core.js';
+export { SpotMePlugin } from './opencode.js';
