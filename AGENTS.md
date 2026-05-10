@@ -2,8 +2,8 @@
 
 ## Task management
 
-This project uses a CLI ticket system for task management. Run `tk help` when you need to use it.
-Use `tk` to keep track of unfinished tasks.
+This project uses **Backlog.md** for task tracking — tasks live in `backlog/tasks/` as plain markdown files, committed to git and tracked across branches.
+See the full CLI workflow in the Backlog.md guidelines section below.
 
 ## Before opening a PR
 
