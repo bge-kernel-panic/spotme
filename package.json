@@ -46,12 +46,16 @@
     "coding-agent"
   ],
   "pi": {
-    "extensions": ["./src/pi.ts"],
-    "skills": ["."]
+    "extensions": [
+      "./src/pi.ts"
+    ],
+    "skills": [
+      "."
+    ]
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.14.0",
     "@earendil-works/pi-coding-agent": "latest",
+    "@opencode-ai/plugin": "^1.14.0",
     "@sinclair/typebox": "^0.34.0"
   },
   "devDependencies": {
@@ -60,6 +64,7 @@
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "8.47.0",
     "@typescript-eslint/parser": "8.47.0",
+    "backlog.md": "^1.45.1",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "^5.1.3",
