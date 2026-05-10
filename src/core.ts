@@ -1,7 +1,7 @@
 // ─── Shared core: types, helpers, and state factory ─────────────────────────
 // Used by both the OpenCode plugin and the Pi extension.
 
-export type Difficulty = "lite" | "medium" | "hard";
+export type Difficulty = 'lite' | 'medium' | 'hard';
 
 export interface ExerciseState {
   active: boolean;
@@ -23,7 +23,7 @@ export interface SpotterState {
 export function makeState(): SpotterState {
   return {
     enabled: false,
-    difficulty: "medium",
+    difficulty: 'medium',
     every: 2,
     counter: 0,
     exercise: null,
@@ -32,24 +32,27 @@ export function makeState(): SpotterState {
 
 export function difficultyLabel(d: Difficulty): string {
   switch (d) {
-    case "lite":   return "signature + structure provided — implement the body";
-    case "medium": return "signature provided — implement the logic";
-    case "hard":   return "spec only — design and implement from scratch";
+    case 'lite':
+      return 'signature + structure provided — implement the body';
+    case 'medium':
+      return 'signature provided — implement the logic';
+    case 'hard':
+      return 'spec only — design and implement from scratch';
   }
 }
 
 export function parseArgs(
   args: string,
-  current: Pick<SpotterState, "difficulty" | "every">
+  current: Pick<SpotterState, 'difficulty' | 'every'>
 ): { difficulty: Difficulty; every: number } {
   let difficulty = current.difficulty;
   let every = current.every;
   const parts = args.trim().split(/\s+/);
   for (let i = 0; i < parts.length; i++) {
-    if (parts[i] === "lite" || parts[i] === "medium" || parts[i] === "hard") {
+    if (parts[i] === 'lite' || parts[i] === 'medium' || parts[i] === 'hard') {
       difficulty = parts[i] as Difficulty;
     }
-    if (parts[i] === "--every" && parts[i + 1]) {
+    if (parts[i] === '--every' && parts[i + 1]) {
       const n = parseInt(parts[i + 1], 10);
       if (!isNaN(n) && n >= 1) every = n;
       i++;
@@ -58,7 +61,7 @@ export function parseArgs(
   return { difficulty, every };
 }
 
-export const CODE_WRITE_TOOLS = new Set(["write", "edit", "patch", "create"]);
+export const CODE_WRITE_TOOLS = new Set(['write', 'edit', 'patch', 'create']);
 
 export function exerciseReadyMessage(
   unit: string,
@@ -72,12 +75,12 @@ export function exerciseReadyMessage(
     ``,
     `Edit the file in your editor. Replace the \`# SPOTTER:\` marker with your implementation.`,
     `When done: \`/spotter:done\` · Hint: \`/spotter:hint\` · Concede: \`/spotter:solve\` · Skip: \`/spotter:skip\``,
-  ].join("\n");
+  ].join('\n');
 }
 
 export function statusMessage(state: SpotterState): string {
   const lines = [
-    `Spotter: ${state.enabled ? "🟢 on" : "⚪ off"}`,
+    `Spotter: ${state.enabled ? '🟢 on' : '⚪ off'}`,
     `Difficulty: ${state.difficulty}`,
     `Trigger every: ${state.every} code write(s)`,
     `Counter: ${state.counter}/${state.every}`,
@@ -85,7 +88,7 @@ export function statusMessage(state: SpotterState): string {
   if (state.exercise?.active) {
     lines.push(`Active exercise: ${state.exercise.unit} (${state.exercise.filePath})`);
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // Prompt injected when user calls /spotter:done
@@ -105,13 +108,13 @@ Do NOT show your own solution. Feedback only. After the review, resume the origi
 }
 
 export const HINT_PROMPT =
-  "Give one targeted hint for the current Spotter exercise. Point toward the approach without revealing the implementation. One paragraph max.";
+  'Give one targeted hint for the current Spotter exercise. Point toward the approach without revealing the implementation. One paragraph max.';
 
 export const SOLVE_PROMPT =
-  "The human has conceded this exercise. Complete the implementation. Briefly note the key pattern they should remember. Then resume the original task.";
+  'The human has conceded this exercise. Complete the implementation. Briefly note the key pattern they should remember. Then resume the original task.';
 
 export const SKIP_PROMPT =
-  "The human is skipping this exercise. Resume the original task and complete the code normally.";
+  'The human is skipping this exercise. Resume the original task and complete the code normally.';
 
 export const BLOCKED_REASON =
-  "[Spotter] Counter reached — scaffold the next unit using the `spotter_exercise` tool instead of writing it directly.";
+  '[Spotter] Counter reached — scaffold the next unit using the `spotter_exercise` tool instead of writing it directly.';

@@ -1,30 +1,70 @@
 {
-  "name": "spotter",
+  "name": "spotme",
   "version": "0.1.0",
-  "description": "Spotter — gym mode for agentic coding. Works with OpenCode and Pi.",
+  "description": "Spot Me — gym mode for agentic coding. Works with OpenCode and Pi.",
+  "author": {
+    "name": "wtfzambo"
+  },
   "type": "module",
   "exports": {
-    "./opencode": "./src/opencode.ts",
-    "./pi": "./src/pi.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./opencode": {
+      "types": "./dist/opencode.d.ts",
+      "default": "./dist/opencode.js"
+    },
+    "./pi": {
+      "types": "./dist/pi.d.ts",
+      "default": "./dist/pi.js"
+    }
   },
-  "main": "src/opencode.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wtfzambo/spotme"
+  },
   "scripts": {
-    "build": "bun build src/opencode.ts src/pi.ts --outdir dist --target bun",
-    "typecheck": "tsc --noEmit"
+    "build": "bun build src/index.ts src/opencode.ts src/pi.ts --outdir dist --target bun",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src"
   },
-  "keywords": ["pi-package", "opencode-plugin", "spotter", "gym-mode", "coding-agent"],
+  "keywords": [
+    "pi-package",
+    "opencode-plugin",
+    "spotme",
+    "gym-mode",
+    "coding-agent"
+  ],
   "pi": {
     "extensions": ["./src/pi.ts"],
     "skills": ["."]
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^0.1.0",
+    "@opencode-ai/plugin": "^1.14.0",
     "@earendil-works/pi-coding-agent": "latest",
     "@sinclair/typebox": "^0.34.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/bun": "^1.1.0",
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@typescript-eslint/eslint-plugin": "8.47.0",
+    "@typescript-eslint/parser": "8.47.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.4",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.47.0"
   }
 }
