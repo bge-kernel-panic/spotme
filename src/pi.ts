@@ -2,6 +2,7 @@
 // Docs: https://github.com/earendil-works/pi/tree/main/packages/coding-agent#extensions
 
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
+import { isToolCallEventType } from '@earendil-works/pi-coding-agent';
 import { Type } from '@sinclair/typebox';
 import { exec } from 'child_process';
 import { access } from 'fs/promises';
@@ -10,7 +11,7 @@ import { promisify } from 'util';
 import {
   type Difficulty,
   type SpotMeState,
-  BLOCKED_REASON,
+  blockedMessage,
   CODE_WRITE_TOOLS,
   donePrompt,
   exerciseReadyMessage,
@@ -236,9 +237,13 @@ export default function (pi: ExtensionAPI) {
     state.counter++;
     if (state.counter >= state.every) {
       state.counter = 0;
+      const filePath =
+        isToolCallEventType('write', event) || isToolCallEventType('edit', event)
+          ? event.input.path
+          : '';
       return {
         block: true,
-        reason: BLOCKED_REASON + ` Difficulty: ${state.difficulty}.`,
+        reason: blockedMessage(event.toolName, filePath, state.difficulty),
       };
     }
   });

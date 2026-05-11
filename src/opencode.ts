@@ -5,7 +5,7 @@ import { type Plugin, tool } from '@opencode-ai/plugin';
 import {
   type Difficulty,
   type SpotMeState,
-  BLOCKED_REASON,
+  blockedMessage,
   CODE_WRITE_TOOLS,
   exerciseReadyMessage,
   HINT_PROMPT,
@@ -168,13 +168,14 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
 
     tool: { spotme_on, spotme_exercise, spotme_status },
 
-    'tool.execute.before': async (input) => {
+    'tool.execute.before': async (input, output) => {
       if (!state.enabled || state.exercise?.active) return;
       if (!CODE_WRITE_TOOLS.has(input.tool)) return;
       state.counter++;
       if (state.counter >= state.every) {
         state.counter = 0;
-        throw new Error(BLOCKED_REASON + ` Difficulty: ${state.difficulty}.`);
+        const filePath: string = (output.args?.filePath ?? output.args?.path ?? '') as string;
+        throw new Error(blockedMessage(input.tool, filePath, state.difficulty));
       }
     },
 

@@ -121,5 +121,83 @@ export const SOLVE_PROMPT =
 export const SKIP_PROMPT =
   'The human is skipping this exercise. Resume the original task and complete the code normally.';
 
+// ─── Comment syntax helpers ────────────────────────────────────────────────
+
+const EXT_COMMENT: Record<string, { open: string; close?: string }> = {
+  // C-style single-line
+  ts: { open: '//' },
+  tsx: { open: '//' },
+  js: { open: '//' },
+  jsx: { open: '//' },
+  java: { open: '//' },
+  c: { open: '//' },
+  cpp: { open: '//' },
+  cs: { open: '//' },
+  go: { open: '//' },
+  swift: { open: '//' },
+  kt: { open: '//' },
+  rs: { open: '//' },
+  php: { open: '//' },
+  dart: { open: '//' },
+  // Hash-style
+  py: { open: '#' },
+  rb: { open: '#' },
+  sh: { open: '#' },
+  bash: { open: '#' },
+  zsh: { open: '#' },
+  yaml: { open: '#' },
+  yml: { open: '#' },
+  toml: { open: '#' },
+  r: { open: '#' },
+  // Block-style
+  html: { open: '<!--', close: '-->' },
+  xml: { open: '<!--', close: '-->' },
+  svg: { open: '<!--', close: '-->' },
+  css: { open: '/*', close: '*/' },
+  scss: { open: '//' },
+  sass: { open: '//' },
+  less: { open: '//' },
+  // Double-dash
+  lua: { open: '--' },
+  sql: { open: '--' },
+  // Lisp-style
+  el: { open: ';;' },
+  clj: { open: ';;' },
+};
+
+function commentForFile(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  const syntax = EXT_COMMENT[ext] ?? { open: '//' };
+  return syntax.close
+    ? `${syntax.open} SPOTME: <description> ${syntax.close}`
+    : `${syntax.open} SPOTME: <description>`;
+}
+
+// ─── Blocker message ──────────────────────────────────────────────────────
+
+/**
+ * Message thrown by tool.execute.before when the counter is reached.
+ * Includes ordered scaffold instructions and language-appropriate comment syntax.
+ */
+export function blockedMessage(toolName: string, filePath: string, difficulty: Difficulty): string {
+  const marker = commentForFile(filePath);
+  const scaffoldStep =
+    toolName === 'edit' && filePath
+      ? `Edit \`${filePath}\` to add a \`${marker}\` comment at the location where the implementation should go.`
+      : filePath
+        ? `Write the scaffold to \`${filePath}\` using the Write tool. Include a \`${marker}\` comment where the implementation should go.`
+        : `Write the scaffold file using the Write tool. Include a \`${marker}\` comment (use appropriate comment syntax for the language) where the implementation should go.`;
+
+  return [
+    `[SpotMe] Counter reached — time for an exercise!`,
+    ``,
+    `Follow these steps in order:`,
+    `1. ${scaffoldStep}`,
+    `2. Call \`spotme_exercise\` with the unit name, the file path, and difficulty "${difficulty}".`,
+    `3. Display the full return value of \`spotme_exercise\` verbatim to the user (do not summarize).`,
+  ].join('\n');
+}
+
+/** @deprecated Use blockedMessage() instead. */
 export const BLOCKED_REASON =
   '[SpotMe] Counter reached — scaffold the next unit using the `spotme_exercise` tool instead of writing it directly.';
