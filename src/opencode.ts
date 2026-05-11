@@ -123,7 +123,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
     'spotme:on': {
       description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
       template:
-        'The user wants to enable SpotMe. Parse any difficulty (lite/medium/hard) and frequency (--every N) from their message — if not specified use current defaults (medium, every 2). Then call `spotme_on` with those values.',
+        'SpotMe gym mode was just activated. Call `spotme_status` to get the current settings, then confirm them to the user in one sentence.',
     },
     'spotme:off': {
       description: 'Disable SpotMe gym mode',
