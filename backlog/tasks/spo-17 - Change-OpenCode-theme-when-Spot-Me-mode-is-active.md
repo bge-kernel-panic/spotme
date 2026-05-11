@@ -4,6 +4,7 @@ title: Change OpenCode theme when Spot Me mode is active
 status: To Do
 assignee: []
 created_date: '2026-05-10 13:33'
+updated_date: '2026-05-11 22:47'
 labels:
   - feature
 dependencies: []
@@ -22,3 +23,9 @@ Give the user a visual cue that Spot Me is on. Config type exposes 'theme?: stri
 - [ ] #1 When spotme:on activates, OpenCode visually indicates gym mode is active
 - [ ] #2 When spotme:off deactivates, the visual indication is removed
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Blocked: OpenCode TUI plugin API is internal-only. The config hook only runs at init, not at runtime. No public API exists for runtime theme switching from a plugin. Revisit when OpenCode exposes a runtime config patch or TUI theme API.
+<!-- SECTION:NOTES:END -->

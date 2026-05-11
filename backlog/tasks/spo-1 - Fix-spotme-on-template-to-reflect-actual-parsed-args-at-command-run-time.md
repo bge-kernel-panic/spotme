@@ -4,7 +4,7 @@ title: 'Fix spotme:on template to reflect actual parsed args at command run time
 status: Done
 assignee: []
 created_date: '2026-05-10 09:24'
-updated_date: '2026-05-10 12:07'
+updated_date: '2026-05-11 22:47'
 labels:
   - bug
 dependencies: []
@@ -24,6 +24,10 @@ Template interpolates state.difficulty and state.every at init, not at command r
 **2026-05-10T02:36:30Z**
 
 Same root cause as spo-d4u1. The spotme:on command template string is evaluated at init. When user types /spotme:on hard --every 4, the LLM sees 'Difficulty: medium. Every 2 code writes' because the template is already baked. The event handler updates state.every=4 after, but that's too late. Option: convert to a spotme_on tool, or re-read parsed args from the event and dispatch a follow-up message with correct values.
+
+2026-05-12: Regression found — LLM was calling spotme_on with difficulty=lite (first enum value) instead of medium when no difficulty specified. Root cause: the spotme:on template still asked the LLM to parse args, and it defaulted to the first enum entry.
+
+Fix (387c1a0): template no longer calls spotme_on at all. command.execute.before already parses args and sets state correctly before the LLM runs. Template now calls spotme_status and confirms what was set. spotme_on tool kept for potential programmatic use but is not called by the command.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
