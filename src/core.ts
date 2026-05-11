@@ -75,16 +75,11 @@ export function exerciseReadyMessage(
     ``,
     `Edit the file in your editor. Replace the \`# SPOTME:\` marker with your implementation.`,
     ``,
-    `AGENT: Immediately call the \`question\` tool with the following arguments so the user can pick their next action:`,
-    `  header: "SpotMe"`,
-    `  question: "Exercise ready — what would you like to do?"`,
-    `  custom: false`,
-    `  options:`,
-    `    - label: "Hint",  description: "Get a targeted hint without the answer"`,
-    `    - label: "Done",  description: "Submit your implementation for review"`,
-    `    - label: "Solve", description: "Concede — let me complete the exercise"`,
-    `    - label: "Skip",  description: "Skip and resume the original task"`,
-    `After the user selects, execute the matching command: Hint→/spotme:hint, Done→/spotme:done, Solve→/spotme:solve, Skip→/spotme:skip.`,
+    `Your options:`,
+    `  \`/spotme:hint\`  — get a targeted hint`,
+    `  \`/spotme:solve\` — concede and let the agent finish`,
+    `  \`/spotme:skip\`  — skip this exercise`,
+    `  \`/spotme:done\`  — submit your implementation for review`,
   ].join('\n');
 }
 
