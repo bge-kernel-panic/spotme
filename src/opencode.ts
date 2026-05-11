@@ -19,6 +19,10 @@ import {
 export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   const state: SpotMeState = makeState();
 
+  // Captured on done/solve/skip in command.execute.before; consumed on session.idle
+  // (after the LLM finishes) to revert the branch once the review/solution is done.
+  let pendingCheckout: { originalBranch: string; tempBranch: string } | null = null;
+
   async function getCurrentBranch(): Promise<string> {
     return (await $`git -C ${directory} branch --show-current`.text()).trim();
   }
@@ -211,25 +215,41 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         return;
       }
       // spotme:status — no hook action; LLM calls spotme_status tool and shows live state
+
+      if (command === 'spotme:done' || command === 'spotme:solve' || command === 'spotme:skip') {
+        if (state.exercise) {
+          pendingCheckout = {
+            originalBranch: state.exercise.originalBranch,
+            tempBranch: state.exercise.branch,
+          };
+          state.counter = 0;
+          // Keep state.exercise intact so the LLM can still run git diff HEAD on
+          // the exercise branch during this turn; cleared on session.idle below.
+        }
+      }
     },
 
     event: async ({ event }) => {
-      if (event.type !== 'command.executed') return;
-      // TypeScript narrows event to EventCommandExecuted here — no cast needed
-      const cmd = event.properties.name;
-
-      if (cmd === 'spotme:done' || cmd === 'spotme:solve' || cmd === 'spotme:skip') {
-        if (state.exercise) {
-          const orig = state.exercise.originalBranch;
-          const tempBranch = state.exercise.branch;
-          state.exercise = null;
-          state.counter = 0;
-          try {
-            await $`git -C ${directory} checkout ${orig}`.quiet();
-            await $`git -C ${directory} branch -d ${tempBranch}`.quiet();
-          } catch {
-            /* ignore */
-          }
+      // After the LLM finishes (session becomes idle), revert the temp exercise branch.
+      // Using session.idle rather than command.executed because command.executed fires
+      // BEFORE the LLM runs — we need the LLM to finish git diff / write the solution
+      // first, then clean up.
+      if (event.type === 'session.idle' && pendingCheckout) {
+        const { originalBranch, tempBranch } = pendingCheckout;
+        pendingCheckout = null;
+        state.exercise = null;
+        try {
+          // Uncommitted changes carry over to the original branch automatically
+          // when there are no conflicting files (scaffold was committed only on temp).
+          await $`git -C ${directory} checkout ${originalBranch}`.quiet();
+        } catch {
+          /* checkout may fail if repo has no HEAD — swallow */
+        }
+        try {
+          // -D (force) because the temp branch always has commits not in the original.
+          await $`git -C ${directory} branch -D ${tempBranch}`.quiet();
+        } catch {
+          /* branch may already be gone — swallow */
         }
       }
     },
