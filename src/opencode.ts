@@ -22,6 +22,10 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   // Bypasses the write counter so the LLM can write the scaffold without retriggering.
   let exercisePending = false;
 
+  // True after spotme_end until the session goes idle.
+  // Bypasses the write counter so LLM resume writes in the same turn don't trigger a new exercise.
+  let graceAfterClose = false;
+
   // ─── Tools ────────────────────────────────────────────────────────────────
 
   const spotme_on = tool({
@@ -53,6 +57,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       state.counter = 0;
       state.exercise = null;
       exercisePending = false;
+      graceAfterClose = false;
       return `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s). Use \`spotme_exercise\` when the counter is reached.`;
     },
   });
@@ -113,6 +118,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       state.exercise = null;
       state.counter = 0;
       exercisePending = false;
+      graceAfterClose = true; // Bypass writes for the rest of this LLM turn
       return '✅ Exercise closed. Counter reset. Resuming normal mode.';
     },
   });
@@ -170,9 +176,11 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
 
     'tool.execute.before': async (input, output) => {
       if (!state.enabled) return;
-      // Bypass counter while waiting for the scaffold write and the spotme_exercise call,
-      // and while an exercise is active (user is implementing).
-      if (exercisePending || state.exercise?.active) return;
+      // Bypass counter while:
+      // - waiting for scaffold write + spotme_exercise call (exercisePending)
+      // - exercise is active — user is implementing (state.exercise?.active)
+      // - in grace period after spotme_end — LLM resume writes in the same turn (graceAfterClose)
+      if (exercisePending || state.exercise?.active || graceAfterClose) return;
       if (!CODE_WRITE_TOOLS.has(input.tool)) return;
       state.counter++;
       if (state.counter >= state.every) {
@@ -195,6 +203,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         state.counter = 0;
         state.exercise = null;
         exercisePending = false;
+        graceAfterClose = false;
         // Show toast instantly — the LLM will also confirm via the spotme_on tool
         await client.tui.showToast({
           body: {
@@ -211,6 +220,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         state.exercise = null;
         state.counter = 0;
         exercisePending = false;
+        graceAfterClose = false;
         await client.tui.showToast({
           body: { title: 'SpotMe', message: '⏹️ Off — normal coding resumed', variant: 'info' },
         });
@@ -218,6 +228,13 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       }
       // spotme:status, done, solve, skip, hint, rep — no hook action needed.
       // State for done/solve/skip is cleared by the LLM calling spotme_end.
+    },
+
+    event: async ({ event }) => {
+      // End grace period when the LLM turn finishes so the next turn counts normally.
+      if (event.type === 'session.idle' && graceAfterClose) {
+        graceAfterClose = false;
+      }
     },
   };
 };
