@@ -1,9 +1,11 @@
 ---
 id: SPO-16
 title: Persistent exercise UI widget with clickable commands (SPO-9 revisited)
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@wtfzambo'
 created_date: '2026-05-10 13:33'
+updated_date: '2026-05-11 15:36'
 labels:
   - feature
 dependencies: []
@@ -19,6 +21,30 @@ While an exercise is active, show a persistent graphical panel listing the avail
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 While exercise is active a UI panel shows the 4 available actions
-- [ ] #2 Clicking an action in the panel executes the corresponding spotme command
+- [x] #1 While exercise is active a UI panel shows the 4 available actions
+- [x] #2 Clicking an action in the panel executes the corresponding spotme command
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Install @opentui/* devDeps for types
+2. Add SpotMeTuiPlugin named export to opencode.ts
+3. Listen session.next.tool.called/success to detect spotme_exercise
+4. Show DialogSelect when exercise starts (hint/done/solve/skip)
+5. appendPrompt + submitPrompt on selection
+6. Toast on command.executed for spotme:on/off
+7. Export from index.ts and test plugin shim
+<!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added SpotMeTuiPlugin named export to opencode.ts. The TUI plugin:
+- Tracks spotme_exercise tool calls via session.next.tool.called event
+- Shows a DialogSelect (hint/done/solve/skip) when the tool succeeds
+- appendPrompt + submitPrompt sends the selected slash command automatically
+- Shows success/info toasts when spotme:on / spotme:off commands execute
+- Installed @opentui/core @opentui/solid @opentui/keymap as devDeps for types
+- Exported SpotMeTuiPlugin from index.ts and updated test shim
+<!-- SECTION:FINAL_SUMMARY:END -->

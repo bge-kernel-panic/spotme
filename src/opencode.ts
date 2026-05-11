@@ -2,6 +2,7 @@
 // Docs: https://opencode.ai/docs/plugins
 
 import { type Plugin, tool } from '@opencode-ai/plugin';
+import { type TuiPlugin } from '@opencode-ai/plugin/tui';
 import {
   type Difficulty,
   type SpotMeState,
@@ -209,4 +210,70 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
       }
     },
   };
+};
+
+// ─── TUI Plugin ──────────────────────────────────────────────────────────────
+// Listens for spotme_exercise tool success → shows a DialogSelect with
+// hint / done / solve / skip options so the user never has to type commands.
+// Also shows toasts for spotme:on / spotme:off.
+
+export const SpotMeTuiPlugin: TuiPlugin = async (api) => {
+  // callID → sessionID for in-flight spotme_exercise calls
+  const pendingCalls = new Map<string, string>();
+
+  api.event.on('session.next.tool.called', (e) => {
+    if (e.properties.tool === 'spotme_exercise') {
+      pendingCalls.set(e.properties.callID, e.properties.sessionID);
+    }
+  });
+
+  api.event.on('session.next.tool.success', (e) => {
+    if (!pendingCalls.has(e.properties.callID)) return;
+    pendingCalls.delete(e.properties.callID);
+
+    const options = [
+      {
+        title: 'Hint',
+        value: '/spotme:hint',
+        description: 'Get a targeted hint without the answer',
+      },
+      {
+        title: 'Done',
+        value: '/spotme:done',
+        description: 'Submit your implementation for review',
+      },
+      {
+        title: 'Solve',
+        value: '/spotme:solve',
+        description: 'Let the agent complete it for you',
+      },
+      {
+        title: 'Skip',
+        value: '/spotme:skip',
+        description: 'Skip and resume the original task',
+      },
+    ];
+
+    api.ui.dialog.replace(() =>
+      api.ui.DialogSelect<string>({
+        title: '🏋️ SpotMe — Exercise Ready',
+        options,
+        skipFilter: true,
+        onSelect: async (opt) => {
+          api.ui.dialog.clear();
+          await api.client.tui.appendPrompt({ text: opt.value });
+          await api.client.tui.submitPrompt();
+        },
+      })
+    );
+  });
+
+  // Toast feedback when gym mode turns on/off
+  api.event.on('command.executed', (e) => {
+    if (e.properties.name === 'spotme:on') {
+      api.ui.toast({ variant: 'success', title: 'SpotMe', message: 'Gym mode is now ON' });
+    } else if (e.properties.name === 'spotme:off') {
+      api.ui.toast({ variant: 'info', title: 'SpotMe', message: 'Gym mode is now OFF' });
+    }
+  });
 };

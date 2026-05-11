@@ -2,8 +2,10 @@
 id: SPO-13
 title: Fix counter-reached flow and scaffold instructions
 status: To Do
-assignee: []
+assignee:
+  - '@wtfzambo'
 created_date: '2026-05-10 13:33'
+updated_date: '2026-05-11 15:36'
 labels:
   - bug
 dependencies: []
