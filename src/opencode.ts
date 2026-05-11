@@ -17,7 +17,7 @@ import {
   statusMessage,
 } from './core.js';
 
-export const SpotMePlugin: Plugin = async ({ $, directory }) => {
+export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   const state: SpotMeState = makeState();
 
   async function getCurrentBranch(): Promise<string> {
@@ -127,17 +127,18 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
   const commands = {
     'spotme:on': {
       description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
-      template:
-        'The user wants to enable SpotMe. Parse any difficulty (lite/medium/hard) and frequency (--every N) from their message — if not specified use current defaults (medium, every 2). Then call `spotme_on` with those values.',
+      // Handled programmatically via command.execute.before — no LLM needed
+      template: '',
     },
     'spotme:off': {
       description: 'Disable SpotMe gym mode',
-      template:
-        'Confirm that SpotMe gym mode is now off and you will resume writing code normally.',
+      // Handled programmatically via command.execute.before — no LLM needed
+      template: '',
     },
     'spotme:status': {
       description: 'Show current SpotMe status',
-      template: 'Call the `spotme_status` tool and display the result to the user.',
+      // Handled programmatically via command.execute.before — no LLM needed
+      template: '',
     },
     'spotme:done': {
       description: 'Submit your implementation for SpotMe review',
@@ -182,6 +183,12 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
     'command.execute.before': async (input, output) => {
       const { command, arguments: rawArgs, sessionID } = input;
 
+      // DEBUG: verify hook is called (remove after confirming)
+      await Bun.write(
+        '/tmp/spotme-hook.log',
+        `[${new Date().toISOString()}] command.execute.before: ${command}\n`
+      );
+
       // Helper to create a synthetic text part (bypasses the LLM)
       const textPart = (text: string) => ({
         id: randomUUID(),
@@ -211,11 +218,10 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
         state.counter = 0;
         state.exercise = null;
 
-        output.parts.push(
-          textPart(
-            `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s).`
-          )
-        );
+        const msg = `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s).`;
+        output.parts.push(textPart(msg));
+        // Instant toast feedback regardless of whether output.parts bypasses the LLM
+        await client.tui.showToast({ body: { title: 'SpotMe', message: msg, variant: 'success' } });
         return;
       }
 
@@ -223,7 +229,9 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
         state.enabled = false;
         state.exercise = null;
         state.counter = 0;
-        output.parts.push(textPart('⏹️ SpotMe is off. Resuming normal code writing.'));
+        const msg = '⏹️ SpotMe is off. Resuming normal code writing.';
+        output.parts.push(textPart(msg));
+        await client.tui.showToast({ body: { title: 'SpotMe', message: msg, variant: 'info' } });
         return;
       }
 
