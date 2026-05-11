@@ -2,7 +2,6 @@
 // Docs: https://opencode.ai/docs/plugins
 
 import { type Plugin, tool } from '@opencode-ai/plugin';
-import { randomUUID } from 'node:crypto';
 import {
   type Difficulty,
   type SpotMeState,
@@ -127,13 +126,13 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   const commands = {
     'spotme:on': {
       description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
-      // State is updated immediately in command.execute.before; template is a fallback
-      // confirmation. Keep it minimal so the LLM doesn't repeat the work.
-      template: 'SpotMe is now on. Confirm in one short sentence only.',
+      template:
+        'The user wants to enable SpotMe. Parse any difficulty (lite/medium/hard) and frequency (--every N) from their message — if not specified use current defaults (medium, every 2). Then call `spotme_on` with those values.',
     },
     'spotme:off': {
       description: 'Disable SpotMe gym mode',
-      template: 'SpotMe is now off. Confirm in one short sentence only.',
+      template:
+        'Confirm that SpotMe gym mode is now off and you will resume writing code normally.',
     },
     'spotme:status': {
       description: 'Show current SpotMe status',
@@ -179,42 +178,25 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       }
     },
 
-    'command.execute.before': async (input, output) => {
-      const { command, arguments: rawArgs, sessionID } = input;
-
-      // Helper to create a synthetic text part (bypasses the LLM)
-      const textPart = (text: string) => ({
-        id: randomUUID(),
-        sessionID,
-        messageID: '',
-        type: 'text' as const,
-        text,
-        synthetic: true,
-      });
+    'command.execute.before': async (input) => {
+      const { command, arguments: rawArgs } = input;
 
       if (command === 'spotme:on') {
+        // Pre-mutate state immediately so the blocker is aware before LLM calls spotme_on
         const parsed = parseArgs(rawArgs, state);
-
-        // Ensure a git repo exists — init one if not
-        let gitNote = '';
-        try {
-          await $`git -C ${directory} rev-parse --is-inside-work-tree`.quiet();
-        } catch {
-          await $`git -C ${directory} init`.quiet();
-          await $`git -C ${directory} commit --allow-empty -m "chore: init repo for SpotMe"`.quiet();
-          gitNote = ' (git repo initialised)';
-        }
-
         state.enabled = true;
         state.difficulty = parsed.difficulty;
         state.every = parsed.every;
         state.counter = 0;
         state.exercise = null;
-
-        const msg = `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s).`;
-        output.parts.push(textPart(msg));
-        // Instant toast feedback regardless of whether output.parts bypasses the LLM
-        await client.tui.showToast({ body: { title: 'SpotMe', message: msg, variant: 'success' } });
+        // Show toast instantly — the LLM will also confirm via the spotme_on tool
+        await client.tui.showToast({
+          body: {
+            title: 'SpotMe',
+            message: `🏋️ On — ${state.difficulty}, every ${state.every} write(s)`,
+            variant: 'success',
+          },
+        });
         return;
       }
 
@@ -222,16 +204,12 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         state.enabled = false;
         state.exercise = null;
         state.counter = 0;
-        const msg = '⏹️ SpotMe is off. Resuming normal code writing.';
-        output.parts.push(textPart(msg));
-        await client.tui.showToast({ body: { title: 'SpotMe', message: msg, variant: 'info' } });
+        await client.tui.showToast({
+          body: { title: 'SpotMe', message: '⏹️ Off — normal coding resumed', variant: 'info' },
+        });
         return;
       }
-
-      if (command === 'spotme:status') {
-        output.parts.push(textPart(statusMessage(state)));
-        return;
-      }
+      // spotme:status — no hook action; LLM calls spotme_status tool and shows live state
     },
 
     event: async ({ event }) => {
