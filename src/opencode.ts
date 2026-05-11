@@ -127,18 +127,17 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   const commands = {
     'spotme:on': {
       description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
-      // Handled programmatically via command.execute.before — no LLM needed
-      template: '',
+      // State is updated immediately in command.execute.before; template is a fallback
+      // confirmation. Keep it minimal so the LLM doesn't repeat the work.
+      template: 'SpotMe is now on. Confirm in one short sentence only.',
     },
     'spotme:off': {
       description: 'Disable SpotMe gym mode',
-      // Handled programmatically via command.execute.before — no LLM needed
-      template: '',
+      template: 'SpotMe is now off. Confirm in one short sentence only.',
     },
     'spotme:status': {
       description: 'Show current SpotMe status',
-      // Handled programmatically via command.execute.before — no LLM needed
-      template: '',
+      template: 'Call the `spotme_status` tool and display the result to the user.',
     },
     'spotme:done': {
       description: 'Submit your implementation for SpotMe review',
@@ -182,12 +181,6 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
 
     'command.execute.before': async (input, output) => {
       const { command, arguments: rawArgs, sessionID } = input;
-
-      // DEBUG: verify hook is called (remove after confirming)
-      await Bun.write(
-        '/tmp/spotme-hook.log',
-        `[${new Date().toISOString()}] command.execute.before: ${command}\n`
-      );
 
       // Helper to create a synthetic text part (bypasses the LLM)
       const textPart = (text: string) => ({
