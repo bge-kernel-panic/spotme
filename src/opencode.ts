@@ -2,6 +2,7 @@
 // Docs: https://opencode.ai/docs/plugins
 
 import { type Plugin, tool } from '@opencode-ai/plugin';
+import { randomUUID } from 'node:crypto';
 import {
   type Difficulty,
   type SpotMeState,
@@ -178,21 +179,65 @@ export const SpotMePlugin: Plugin = async ({ $, directory }) => {
       }
     },
 
+    'command.execute.before': async (input, output) => {
+      const { command, arguments: rawArgs, sessionID } = input;
+
+      // Helper to create a synthetic text part (bypasses the LLM)
+      const textPart = (text: string) => ({
+        id: randomUUID(),
+        sessionID,
+        messageID: '',
+        type: 'text' as const,
+        text,
+        synthetic: true,
+      });
+
+      if (command === 'spotme:on') {
+        const parsed = parseArgs(rawArgs, state);
+
+        // Ensure a git repo exists — init one if not
+        let gitNote = '';
+        try {
+          await $`git -C ${directory} rev-parse --is-inside-work-tree`.quiet();
+        } catch {
+          await $`git -C ${directory} init`.quiet();
+          await $`git -C ${directory} commit --allow-empty -m "chore: init repo for SpotMe"`.quiet();
+          gitNote = ' (git repo initialised)';
+        }
+
+        state.enabled = true;
+        state.difficulty = parsed.difficulty;
+        state.every = parsed.every;
+        state.counter = 0;
+        state.exercise = null;
+
+        output.parts.push(
+          textPart(
+            `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s).`
+          )
+        );
+        return;
+      }
+
+      if (command === 'spotme:off') {
+        state.enabled = false;
+        state.exercise = null;
+        state.counter = 0;
+        output.parts.push(textPart('⏹️ SpotMe is off. Resuming normal code writing.'));
+        return;
+      }
+
+      if (command === 'spotme:status') {
+        output.parts.push(textPart(statusMessage(state)));
+        return;
+      }
+    },
+
     event: async ({ event }) => {
       if (event.type !== 'command.executed') return;
       // TypeScript narrows event to EventCommandExecuted here — no cast needed
       const cmd = event.properties.name;
-      const rawArgs = event.properties.arguments;
 
-      if (cmd === 'spotme:off') {
-        // Also honour parseArgs in case someone passes args via the off command
-        const parsed = parseArgs(rawArgs, state);
-        state.enabled = false;
-        state.difficulty = parsed.difficulty;
-        state.every = parsed.every;
-        state.exercise = null;
-        state.counter = 0;
-      }
       if (cmd === 'spotme:done' || cmd === 'spotme:solve' || cmd === 'spotme:skip') {
         if (state.exercise) {
           const orig = state.exercise.originalBranch;
