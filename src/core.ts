@@ -7,8 +7,6 @@ export interface ExerciseState {
   active: boolean;
   unit: string;
   filePath: string;
-  branch: string;
-  originalBranch: string;
   difficulty: Difficulty;
 }
 
@@ -97,14 +95,8 @@ export function statusMessage(state: SpotMeState): string {
 }
 
 // Prompt injected when user calls /spotme:done
-export function donePrompt(diff: string): string {
-  return `The human has finished implementing the SpotMe exercise. Here is their diff:
-
-\`\`\`diff
-${diff}
-\`\`\`
-
-Review the implementation:
+export function donePrompt(filePath: string): string {
+  return `The human has finished the SpotMe exercise. Read \`${filePath}\` and evaluate their implementation:
 1. What they got right (1–2 sentences, specific)
 2. What's missing or could be better (concrete, no vague "consider edge cases")
 3. Next steps — only if the exercise is incomplete
@@ -112,11 +104,16 @@ Review the implementation:
 Do NOT show your own solution. Feedback only. After the review, resume the original task.`;
 }
 
+// Prompt injected when user calls /spotme:solve
+export function solvePrompt(filePath: string): string {
+  return `The human has conceded the SpotMe exercise. Read \`${filePath}\`, complete the implementation (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern they should remember. Then resume the original task.`;
+}
+
 export const HINT_PROMPT =
   'Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.';
 
 export const SOLVE_PROMPT =
-  'The human has conceded this exercise. Complete the implementation. Briefly note the key pattern they should remember. Then resume the original task.';
+  'Call `spotme_status` to get the active exercise details. Read the exercise file. Complete the implementation (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern they should remember. Then resume the original task.';
 
 export const SKIP_PROMPT =
   'The human is skipping this exercise. Resume the original task and complete the code normally.';

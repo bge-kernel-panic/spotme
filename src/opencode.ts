@@ -11,7 +11,6 @@ import {
   HINT_PROMPT,
   makeState,
   parseArgs,
-  SKIP_PROMPT,
   SOLVE_PROMPT,
   statusMessage,
 } from './core.js';
@@ -19,22 +18,22 @@ import {
 export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
   const state: SpotMeState = makeState();
 
-  // Captured on done/solve/skip in command.execute.before; consumed on session.idle
-  // (after the LLM finishes) to revert the branch once the review/solution is done.
-  let pendingCheckout: { originalBranch: string; tempBranch: string } | null = null;
-
-  async function getCurrentBranch(): Promise<string> {
-    return (await $`git -C ${directory} branch --show-current`.text()).trim();
-  }
+  // True between a counter-triggered block and the subsequent spotme_exercise call.
+  // Bypasses the write counter so the LLM can write the scaffold without retriggering.
+  let exercisePending = false;
 
   // ─── Tools ────────────────────────────────────────────────────────────────
 
   const spotme_on = tool({
     description: 'Activate SpotMe gym mode with the specified difficulty and frequency.',
     args: {
-      difficulty: tool.schema.enum(['lite', 'medium', 'hard']).describe('Exercise difficulty'),
+      difficulty: tool.schema
+        .enum(['lite', 'medium', 'hard'])
+        .default('medium')
+        .describe('Exercise difficulty (default: medium)'),
       every: tool.schema
         .number()
+        .default(2)
         .describe('How many code writes before triggering an exercise (default: 2)'),
     },
     async execute(args) {
@@ -53,13 +52,14 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       state.every = Math.max(1, Math.floor(args.every));
       state.counter = 0;
       state.exercise = null;
+      exercisePending = false;
       return `🏋️ SpotMe is on${gitNote}. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s). Use \`spotme_exercise\` when the counter is reached.`;
     },
   });
 
   const spotme_exercise = tool({
     description:
-      'Set up a SpotMe coding exercise. Call this AFTER writing the scaffold with the Write tool. Branches off the current branch, commits the scaffold, and hands off to the human.',
+      'Record the start of a SpotMe coding exercise. Call this AFTER writing the scaffold with the Write tool. Records the exercise in state and hands off to the human.',
     args: {
       unit: tool.schema
         .string()
@@ -74,7 +74,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
     async execute(args) {
       const { unit, filePath, difficulty } = args;
 
-      // Verify file exists before touching git
+      // Verify file exists
       const fullPath = `${directory}/${filePath}`;
       const file = Bun.file(fullPath);
       if (!(await file.exists())) {
@@ -83,31 +83,11 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         );
       }
 
-      let originalBranch: string;
-      try {
-        originalBranch = await getCurrentBranch();
-      } catch {
-        originalBranch = 'main';
-      }
-
-      const safeName = unit.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const branchName = `spotme/${safeName}`;
-
-      try {
-        await $`git -C ${directory} checkout -b ${branchName}`.quiet();
-      } catch {
-        await $`git -C ${directory} checkout ${branchName}`.quiet();
-      }
-
-      await $`git -C ${directory} add ${filePath}`.quiet();
-      await $`git -C ${directory} commit -m "spotme: scaffold ${unit}"`.quiet();
-
+      exercisePending = false;
       state.exercise = {
         active: true,
         unit,
         filePath,
-        branch: branchName,
-        originalBranch,
         difficulty: difficulty as Difficulty,
       };
       state.counter = 0;
@@ -122,6 +102,18 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
     args: {},
     async execute() {
       return statusMessage(state);
+    },
+  });
+
+  const spotme_end = tool({
+    description:
+      'Close the current SpotMe exercise. Call this after reviewing, solving, or skipping — once the exercise turn is fully complete.',
+    args: {},
+    async execute() {
+      state.exercise = null;
+      state.counter = 0;
+      exercisePending = false;
+      return '✅ Exercise closed. Counter reset. Resuming normal mode.';
     },
   });
 
@@ -145,14 +137,18 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
     'spotme:done': {
       description: 'Submit your implementation for SpotMe review',
       template:
-        'Run `git diff HEAD` to get the diff of the current exercise branch, then review the implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. After the review, resume the original task.',
+        "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Then call `spotme_end` to close the exercise and resume the original task.",
     },
     'spotme:hint': { description: 'Get a hint for the current exercise', template: HINT_PROMPT },
     'spotme:solve': {
       description: 'Concede — let the agent finish the exercise',
       template: SOLVE_PROMPT,
     },
-    'spotme:skip': { description: 'Skip this exercise', template: SKIP_PROMPT },
+    'spotme:skip': {
+      description: 'Skip this exercise',
+      template:
+        'The human is skipping this exercise. Call `spotme_end` to close it, then resume the original task and complete the code normally.',
+    },
     'spotme:rep': {
       description: 'Request an on-demand SpotMe exercise',
       template:
@@ -170,14 +166,18 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
       }
     },
 
-    tool: { spotme_on, spotme_exercise, spotme_status },
+    tool: { spotme_on, spotme_exercise, spotme_status, spotme_end },
 
     'tool.execute.before': async (input, output) => {
-      if (!state.enabled || state.exercise?.active) return;
+      if (!state.enabled) return;
+      // Bypass counter while waiting for the scaffold write and the spotme_exercise call,
+      // and while an exercise is active (user is implementing).
+      if (exercisePending || state.exercise?.active) return;
       if (!CODE_WRITE_TOOLS.has(input.tool)) return;
       state.counter++;
       if (state.counter >= state.every) {
         state.counter = 0;
+        exercisePending = true;
         const filePath: string = (output.args?.filePath ?? output.args?.path ?? '') as string;
         throw new Error(blockedMessage(input.tool, filePath, state.difficulty));
       }
@@ -194,6 +194,7 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         state.every = parsed.every;
         state.counter = 0;
         state.exercise = null;
+        exercisePending = false;
         // Show toast instantly — the LLM will also confirm via the spotme_on tool
         await client.tui.showToast({
           body: {
@@ -209,49 +210,14 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         state.enabled = false;
         state.exercise = null;
         state.counter = 0;
+        exercisePending = false;
         await client.tui.showToast({
           body: { title: 'SpotMe', message: '⏹️ Off — normal coding resumed', variant: 'info' },
         });
         return;
       }
-      // spotme:status — no hook action; LLM calls spotme_status tool and shows live state
-
-      if (command === 'spotme:done' || command === 'spotme:solve' || command === 'spotme:skip') {
-        if (state.exercise) {
-          pendingCheckout = {
-            originalBranch: state.exercise.originalBranch,
-            tempBranch: state.exercise.branch,
-          };
-          state.counter = 0;
-          // Keep state.exercise intact so the LLM can still run git diff HEAD on
-          // the exercise branch during this turn; cleared on session.idle below.
-        }
-      }
-    },
-
-    event: async ({ event }) => {
-      // After the LLM finishes (session becomes idle), revert the temp exercise branch.
-      // Using session.idle rather than command.executed because command.executed fires
-      // BEFORE the LLM runs — we need the LLM to finish git diff / write the solution
-      // first, then clean up.
-      if (event.type === 'session.idle' && pendingCheckout) {
-        const { originalBranch, tempBranch } = pendingCheckout;
-        pendingCheckout = null;
-        state.exercise = null;
-        try {
-          // Uncommitted changes carry over to the original branch automatically
-          // when there are no conflicting files (scaffold was committed only on temp).
-          await $`git -C ${directory} checkout ${originalBranch}`.quiet();
-        } catch {
-          /* checkout may fail if repo has no HEAD — swallow */
-        }
-        try {
-          // -D (force) because the temp branch always has commits not in the original.
-          await $`git -C ${directory} branch -D ${tempBranch}`.quiet();
-        } catch {
-          /* branch may already be gone — swallow */
-        }
-      }
+      // spotme:status, done, solve, skip, hint, rep — no hook action needed.
+      // State for done/solve/skip is cleared by the LLM calling spotme_end.
     },
   };
 };
