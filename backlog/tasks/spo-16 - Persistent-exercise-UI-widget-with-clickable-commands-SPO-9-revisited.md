@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@wtfzambo'
 created_date: '2026-05-10 13:33'
-updated_date: '2026-05-11 15:36'
+updated_date: '2026-05-11 16:47'
 labels:
   - feature
 dependencies: []
@@ -47,4 +47,6 @@ Added SpotMeTuiPlugin named export to opencode.ts. The TUI plugin:
 - Shows success/info toasts when spotme:on / spotme:off commands execute
 - Installed @opentui/core @opentui/solid @opentui/keymap as devDeps for types
 - Exported SpotMeTuiPlugin from index.ts and updated test shim
+
+Pivoted implementation: TUI plugin API is not available to external plugins (internal-only). Instead, exerciseReadyMessage now includes an AGENT instruction to immediately call OpenCode's built-in question tool with Hint/Done/Solve/Skip options. The agent calls it, the question dialog appears, the user clicks, and the agent maps the selection to the corresponding /spotme:* command. Removed SpotMeTuiPlugin export and @opentui/* devDeps.
 <!-- SECTION:FINAL_SUMMARY:END -->
