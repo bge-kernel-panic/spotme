@@ -113,7 +113,7 @@ export const HINT_PROMPT =
   'Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.';
 
 export const SOLVE_PROMPT =
-  'Call `spotme_status` to get the active exercise details. Read the exercise file. Complete the implementation (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern they should remember. Then resume the original task.';
+  'Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution using the Write tool first (replace the SPOTME marker if still present, or improve what the user wrote) — do this BEFORE calling spotme_end. Then call `spotme_end` to close the exercise. Briefly note the key pattern the user should remember. Then resume the original task.';
 
 export const SKIP_PROMPT =
   'The human is skipping this exercise. Resume the original task and complete the code normally.';
