@@ -135,17 +135,17 @@ export const PROMPTS = {
   STATUS: 'Call the `spotme_status` tool and display the result to the user.',
 
   /** /spotme:done — review user's implementation, then close. */
-  DONE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Then call `spotme_end` to close the exercise and resume the original task.",
+  DONE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.",
 
   /** /spotme:hint — one hint, no spoilers. */
   HINT: 'Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.',
 
   /** /spotme:solve — write solution BEFORE closing exercise. */
   SOLVE:
-    'Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution using the Write tool first (replace the SPOTME marker if still present, or improve what the user wrote) — do this BEFORE calling spotme_end. Then call `spotme_end` to close the exercise. Briefly note the key pattern the user should remember. Then resume the original task.',
+    'Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern the user should remember. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.',
 
-  /** /spotme:skip — close and resume. */
-  SKIP: 'The human is skipping this exercise. Call `spotme_end` to close it, then resume the original task and complete the code normally.',
+  /** /spotme:skip — complete the code, then close. */
+  SKIP: 'The human is skipping this exercise. Resume the original task and complete the code normally. Call `spotme_end` as the LAST thing you do.',
 
   /** /spotme:rep — on-demand exercise. */
   REP: 'The human wants a coding exercise. Write the scaffold for the next logical unit using the Write tool (use a `# SPOTME: <description>` marker where the human should implement), then call `spotme_exercise` with the unit name, file path, and difficulty.',
