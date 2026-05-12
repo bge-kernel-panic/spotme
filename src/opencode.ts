@@ -77,10 +77,16 @@ export const SpotMePlugin: Plugin = async ({ $, directory, client }) => {
         .describe('Difficulty — must match the active session setting'),
     },
     async execute(args) {
-      const { unit, filePath, difficulty } = args;
+      const { unit, difficulty } = args;
+
+      // Normalise filePath: LLM may pass absolute or relative; always store relative.
+      const rawPath = args.filePath;
+      const fullPath = rawPath.startsWith('/') ? rawPath : `${directory}/${rawPath}`;
+      const filePath = fullPath.startsWith(`${directory}/`)
+        ? fullPath.slice(directory.length + 1)
+        : rawPath;
 
       // Verify file exists
-      const fullPath = `${directory}/${filePath}`;
       const file = Bun.file(fullPath);
       if (!(await file.exists())) {
         throw new Error(

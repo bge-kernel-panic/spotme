@@ -47,15 +47,20 @@ export default function (pi: ExtensionAPI) {
       }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const { unit, filePath, difficulty } = params;
+      const { unit, difficulty } = params;
       const cwd = ctx.cwd ?? process.cwd();
+
+      // Normalise filePath: LLM may pass absolute or relative; always store relative.
+      const rawPath = params.filePath;
+      const fullPath = rawPath.startsWith('/') ? rawPath : join(cwd, rawPath);
+      const filePath = fullPath.startsWith(cwd + '/') ? fullPath.slice(cwd.length + 1) : rawPath;
 
       // Verify file exists
       try {
-        await access(join(cwd, filePath));
+        await access(fullPath);
       } catch {
         throw new Error(
-          `Scaffold file not found at ${join(cwd, filePath)}. Write the scaffold with the Write tool first, then call spotme_exercise.`
+          `Scaffold file not found at ${fullPath}. Write the scaffold with the Write tool first, then call spotme_exercise.`
         );
       }
 
