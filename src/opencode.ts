@@ -22,11 +22,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
   // Bypasses the write counter so the LLM can write the scaffold without retriggering.
   let exercisePending = false;
 
-  // How many more write tool calls to bypass after spotme_end before counting resumes.
-  // Gives the LLM a write-count grace window so resume writes don't immediately re-trigger.
-  // Set to state.every on close; decremented (not counted) on each bypassed write.
-  let graceWritesRemaining = 0;
-
   // ─── Tools ────────────────────────────────────────────────────────────────
 
   const spotme_on = tool({
@@ -48,7 +43,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
       state.counter = 0;
       state.exercise = null;
       exercisePending = false;
-      graceWritesRemaining = 0;
       return `🏋️ SpotMe is on. Difficulty: ${state.difficulty}. Triggering every ${state.every} code write(s). Use \`spotme_exercise\` when the counter is reached.`;
     },
   });
@@ -86,7 +80,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
       }
 
       exercisePending = false;
-      graceWritesRemaining = 0;
       state.exercise = {
         active: true,
         unit,
@@ -116,8 +109,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
       state.exercise = null;
       state.counter = 0;
       exercisePending = false;
-      // Give a grace window of `every` writes so LLM resume writes don't immediately re-trigger.
-      graceWritesRemaining = state.every;
       return '✅ Exercise closed. Counter reset. Resuming normal mode.';
     },
   });
@@ -175,15 +166,9 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
 
     'tool.execute.before': async (input, output) => {
       if (!state.enabled) return;
-      // Bypass counter while:
-      // - waiting for scaffold write + spotme_exercise call (exercisePending)
-      // - exercise is active — user is implementing (state.exercise?.active)
+      // Bypass counter while waiting for scaffold write + spotme_exercise call,
+      // or while an exercise is active (user is implementing).
       if (exercisePending || state.exercise?.active) return;
-      // Consume one grace write (LLM resuming after solve/skip) without counting it.
-      if (graceWritesRemaining > 0) {
-        if (CODE_WRITE_TOOLS.has(input.tool)) graceWritesRemaining--;
-        return;
-      }
       if (!CODE_WRITE_TOOLS.has(input.tool)) return;
       state.counter++;
       if (state.counter >= state.every) {
@@ -206,7 +191,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
         state.counter = 0;
         state.exercise = null;
         exercisePending = false;
-        graceWritesRemaining = 0;
         // Show toast instantly — the LLM will also confirm via spotme_status
         await client.tui.showToast({
           body: {
@@ -223,7 +207,6 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
         state.exercise = null;
         state.counter = 0;
         exercisePending = false;
-        graceWritesRemaining = 0;
         await client.tui.showToast({
           body: { title: 'SpotMe', message: '⏹️ Off — normal coding resumed', variant: 'info' },
         });
