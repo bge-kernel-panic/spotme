@@ -4,9 +4,10 @@ title: Change OpenCode theme when Spot Me mode is active
 status: To Do
 assignee: []
 created_date: '2026-05-10 13:33'
-updated_date: '2026-05-11 22:47'
+updated_date: '2026-05-12 00:01'
 labels:
   - feature
+  - blocked
 dependencies: []
 priority: low
 ordinal: 17000

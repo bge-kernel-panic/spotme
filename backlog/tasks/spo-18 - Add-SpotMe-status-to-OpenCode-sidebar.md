@@ -4,9 +4,10 @@ title: Add SpotMe status to OpenCode sidebar
 status: To Do
 assignee: []
 created_date: '2026-05-11 18:36'
-updated_date: '2026-05-11 22:47'
+updated_date: '2026-05-12 00:01'
 labels:
   - feature
+  - blocked
 dependencies: []
 priority: low
 ordinal: 18000
