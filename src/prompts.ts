@@ -135,7 +135,7 @@ export const PROMPTS = {
   STATUS: 'Call the `spotme_status` tool and display the result to the user.',
 
   /** /spotme:done — review user's implementation, then close. */
-  DONE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.",
+  DONE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1-2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.",
 
   /** /spotme:hint — one hint, no spoilers. */
   HINT: 'Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.',

@@ -1,9 +1,9 @@
 // ─── SpotMe Engine ─────────────────────────────────────────────────────────
 // Platform-agnostic core logic. Adapters (OpenCode, Pi, etc.) delegate here.
 
+import { blockedMessage, exerciseReadyMessage, statusMessage } from './prompts.js';
 import type { Difficulty, SpotMeState } from './types.js';
 import { CODE_WRITE_TOOLS, parseArgs } from './types.js';
-import { blockedMessage, exerciseReadyMessage, statusMessage } from './prompts.js';
 
 // ─── Platform adapter interface ─────────────────────────────────────────────
 
