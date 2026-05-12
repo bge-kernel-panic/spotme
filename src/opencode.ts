@@ -11,7 +11,6 @@ import {
   HINT_PROMPT,
   makeState,
   parseArgs,
-  SOLVE_PROMPT,
   statusMessage,
 } from './core.js';
 
@@ -138,7 +137,8 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
     'spotme:hint': { description: 'Get a hint for the current exercise', template: HINT_PROMPT },
     'spotme:solve': {
       description: 'Concede — let the agent finish the exercise',
-      template: SOLVE_PROMPT,
+      template:
+        'Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution using the Write tool first (replace the SPOTME marker if still present, or improve what the user wrote) — do this BEFORE calling spotme_end. Then call `spotme_end` to close the exercise. Briefly note the key pattern the user should remember. Then resume the original task.',
     },
     'spotme:skip': {
       description: 'Skip this exercise',
