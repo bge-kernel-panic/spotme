@@ -29,10 +29,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wtfzambo/spotme"
-  },
+    "url": "https://github.com/wtfzambo/spotme"  },
   "scripts": {
-    "build": "bun build src/index.ts src/opencode.ts src/pi.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts src/opencode.ts src/pi.ts --outdir dist --target bun && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
