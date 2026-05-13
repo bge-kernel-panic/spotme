@@ -1,6 +1,6 @@
 {
   "name": "spotme",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SpotMe — gym mode for agentic coding. Works with OpenCode and Pi.",
   "author": {
     "name": "wtfzambo"
@@ -21,7 +21,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wtfzambo/spotme"  },
+    "url": "https://github.com/wtfzambo/spotme"
+  },
   "scripts": {
     "build": "bun build src/index.ts src/opencode.ts src/pi.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit",
