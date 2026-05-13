@@ -10,7 +10,7 @@ Instead of writing 100% of the code for you, the agent scaffolds a logical unit,
 
 > "Keep your edge."
 
----
+<h1></h1>
 
 <p align="center">
     <img src="./imgs/doge.jpg", width=50%>
