@@ -9,8 +9,7 @@
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
-    "./opencode": "./dist/opencode.js",
-    "./pi": "./dist/pi.js"
+    "./opencode": "./dist/opencode.js"
   },
   "files": [
     "dist",
@@ -24,7 +23,7 @@
     "url": "https://github.com/wtfzambo/spotme"
   },
   "scripts": {
-    "build": "bun build src/index.ts src/opencode.ts src/pi.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts src/opencode.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
