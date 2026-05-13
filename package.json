@@ -6,6 +6,7 @@
     "name": "wtfzambo"
   },
   "type": "module",
+  "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
     "./opencode": "./dist/opencode.js",
