@@ -6,20 +6,26 @@
 
 <h6 align="center"><i>Gym mode for agentic coding</i></h6>
 
+<h1></h1>
+
 Instead of writing 100% of the code for you, the agent scaffolds a logical unit, hands it off, watches you implement it, and reviews your work before resuming.
 
 > "Keep your edge."
 
-<h1></h1>
-
 <p align="center">
-    <img src="./imgs/doge.jpg", width=50%>
+    <img src="./imgs/spotme.gif", width=80%>
 </p>
+
+<h1></h1>
 
 Heavy AI usage makes you stupid.
 
 <p align="center">
 <a href="https://www.microsoft.com/en-us/research/publication/the-impact-of-generative-ai-on-critical-thinking-self-reported-reductions-in-cognitive-effort-and-confidence-effects-from-a-survey-of-knowledge-workers/">Science</a>. <a href="https://arxiv.org/abs/2511.02922v2">says</a>. <a href="https://arxiv.org/abs/2506.08872">so</a>. <a href="https://www.anthropic.com/research/AI-assistance-coding-skills">Anthropic too</a>.
+</p>
+
+<p align="center">
+    <img src="./imgs/doge.jpg", width=40%>
 </p>
 
 When **BIG BAD AI COMPANY™** warns us about the negative effects of its own product, we should probably pay attention.
