@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD025 MD036 -->
+
 # Rules
 
 ## Task management
