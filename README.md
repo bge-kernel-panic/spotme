@@ -35,7 +35,11 @@ When **BIG BAD AI COMPANY™** warns us about the negative effects of its own pr
 
 Much like sitting on your ass all day makes you weak and sad, keeping your brain in powersave mode all day makes you lazy and dumb.
 
-The first you fix by going to the gym. The second you fix by using SpotMe.
+The first you fix by going to the gym.
+
+The second you fix by using SpotMe.
+
+---
 
 ## How it works
 
@@ -44,8 +48,6 @@ The first you fix by going to the gym. The second you fix by using SpotMe.
 3. You implement the marked section (`# SPOTME: ...`) directly in your editor
 4. `/spotme:done` → agent checks your work and gives brief, calibrated feedback
 5. Agent resumes the original task
-
----
 
 ## Commands
 
@@ -60,8 +62,6 @@ The first you fix by going to the gym. The second you fix by using SpotMe.
 | `/spotme:solve` | Concede — agent completes the exercise |
 | `/spotme:skip` | Skip this exercise, no note |
 
----
-
 ## Difficulty levels
 
 | Level | Agent writes | You write |
@@ -69,8 +69,6 @@ The first you fix by going to the gym. The second you fix by using SpotMe.
 | `lite` | Signature + docstring + structure | Just the body |
 | `medium` | Signature + `# SPOTME:` spec comment | All logic |
 | `hard` | Plain English spec comment only | Everything |
-
----
 
 ## Install
 
