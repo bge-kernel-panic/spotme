@@ -42,5 +42,3 @@ jobs:
           TAG="${{ github.event.inputs.tag || github.event.client_payload.tag || 'latest' }}"
           echo "Publishing with tag: $TAG"
           npm publish --tag "$TAG" --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

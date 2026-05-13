@@ -2,10 +2,9 @@ name: Release
 
 on:
   workflow_dispatch:
-  # Enable push trigger when ready for automated releases:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

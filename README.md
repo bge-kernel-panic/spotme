@@ -37,7 +37,7 @@ Much like sitting on your ass all day makes you weak and sad, keeping your brain
 
 The first you fix by going to the gym.
 
-The second you fix by using SpotMe.
+**The second you fix by using SpotMe.**
 
 ---
 
@@ -74,55 +74,28 @@ The second you fix by using SpotMe.
 
 ### OpenCode
 
-Copy or symlink into your project's plugin directory:
-```bash
-# Project-level
-ln -s /path/to/spotme .opencode/plugins/spotme
-
-# Global
-ln -s /path/to/spotme ~/.config/opencode/plugins/spotme
-```
-
-Or add to `opencode.json` once published to npm:
+Add to your `opencode.json`:
 ```json
-{ "plugin": ["spotme"] }
+{
+    "$schema": "https://opencode.ai/config.json",
+    "plugin": ["spotme"]
+}
 ```
 
-The `src/opencode.ts` file is the plugin entry point.
+### Pi (WIP)
 
-### Pi
+> [!WARNING]
+> Pi integration is currently Work In Progress and has NOT been tested.
 
-Copy or symlink into your extensions directory:
-```bash
-# Project-level
-ln -s /path/to/spotme .pi/extensions/spotme
+Install as a Pi package once published:
 
-# Global
-ln -s /path/to/spotme ~/.pi/agent/extensions/spotme
-```
-
-Or install as a Pi package once published:
 ```bash
 pi install npm:spotme
 ```
 
-The `src/pi.ts` file is the extension entry point. Pi auto-discovers it via the `pi.extensions` field in `package.json`.
-
 ### Skill only (any harness that supports AgentSkills)
 
 Copy `SKILL.md` into your harness's skills directory. This gives the prompt layer without the automated tool interception — commands still work, but the counter-based trigger won't fire automatically.
-
----
-
-## Development status
-
-**v0.1 — working draft, not yet validated**
-
-Open questions:
-- OpenCode: `command.executed` event shape (args parsing may need adjustment)
-- Pi: `ctx.cwd` availability in tool/command handlers
-- Both: scoped test running after `/spotme:done`
-- Both: branch cleanup strategy after review
 
 ---
 
