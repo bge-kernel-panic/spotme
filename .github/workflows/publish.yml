@@ -26,6 +26,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -41,6 +46,4 @@ jobs:
         run: |
           TAG="${{ github.event.inputs.tag || github.event.client_payload.tag || 'latest' }}"
           echo "Publishing with tag: $TAG"
-          npm publish --tag "$TAG" --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish --tag "$TAG" --access public
