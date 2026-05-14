@@ -10,7 +10,9 @@
 
 Instead of writing 100% of the code for you, the agent scaffolds a logical unit, hands it off, watches you implement it, and reviews your work before resuming.
 
-> "Keep your edge."
+<p align="center">
+  <sub>___ <q><i>Keep your edge</i></q> ___</sub>
+</p>
 
 <p align="center">
     <img src="./imgs/spotme.gif", width=80%>
