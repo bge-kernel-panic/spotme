@@ -8,6 +8,6 @@ spotme_dir=$(dirname $(dirname "$0"))
 mkdir -p $(pwd)/.opencode/plugins
 ln -s $spotme_dir $(pwd)/.opencode/plugins/spotme
 
-tee .opencode/plugins/spotme.ts 2>&1 > /dev/null <<EOF
+cat > .opencode/plugins/spotme.ts <<EOF
 export { SpotMePlugin } from './spotme/src';
 EOF
