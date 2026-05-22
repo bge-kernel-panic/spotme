@@ -17,6 +17,16 @@ bun run lint
 bun run build
 ```
 
+## Claude Code plugin gotchas
+
+When iterating on the Claude plugin (artifacts, hooks, MCP server):
+
+- **Hook config changes require a full Claude Code restart.** `/reload-plugins` reloads skills/MCP servers but does NOT re-register hook entries. If you edit `hooks/hooks.json` and only run `/reload-plugins`, the hook will still use the previous shape (or not fire at all).
+- **`mcp_tool` PreToolUse hooks need an `input` block.** Without it, Claude Code invokes the MCP tool with no arguments. Use the template syntax: `"input": { "tool_name": "${tool_name}", "file_path": "${tool_input.file_path}" }`.
+- **Deny response shape is `hookSpecificOutput`, not the top-level `decision`/`reason` used by `command` hooks.** The MCP tool must return text content containing JSON of the form `{ "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..." } }`.
+- **Plugin MCP server identifiers.** The model sees tools as `mcp__plugin_<plugin>_<server>__<tool>` (underscores), but the hook `server` field needs the colon form: `plugin:<plugin>:<server>`. `/mcp` displays the colon form.
+- **`dist/cli.js` and `dist/claude-mcp.js` are committed.** Rebuild with `bun run build:node` and re-commit before pushing, otherwise `bun add -g github:...` installs ship a stale bundle.
+
 <!-- BACKLOG.MD GUIDELINES START -->
 # Instructions for the usage of Backlog.md CLI Tool
 

@@ -157,10 +157,6 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     case 'spotme_intercept_write': {
       const toolName = (a.tool_name as string | undefined) ?? '';
       const filePath = (a.file_path as string | undefined) ?? '';
-      // eslint-disable-next-line no-console
-      console.error(
-        `[spotme] intercept tool=${toolName} file=${filePath} args=${JSON.stringify(a)}`
-      );
       const result = engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {

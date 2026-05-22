@@ -351,7 +351,7 @@ async function installClaude(opts) {
   const manualCommands = [
     `claude plugin marketplace add ${marketplaceDir}`,
     `claude plugin install spotme`,
-    `# Then run /reload-plugins in Claude Code`
+    `# Then fully restart Claude Code. SpotMe's PreToolUse hook won't load without it.`
   ].join(`
 `);
   if (opts.manual) {
@@ -403,7 +403,7 @@ async function installClaude(opts) {
     console.log("Plugin installed.");
   }
   console.log("");
-  console.log("Run /reload-plugins in Claude Code to activate, or restart Claude Code.");
+  console.log("⚠ Fully restart Claude Code. SpotMe's PreToolUse hook won't load without it.");
 }
 
 // src/installer/opencode.ts

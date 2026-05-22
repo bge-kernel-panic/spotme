@@ -93,7 +93,7 @@ export async function installClaude(opts: ClaudeInstallOptions): Promise<void> {
   const manualCommands = [
     `claude plugin marketplace add ${marketplaceDir}`,
     `claude plugin install spotme`,
-    `# Then run /reload-plugins in Claude Code`,
+    `# Then fully restart Claude Code. SpotMe's PreToolUse hook won't load without it.`,
   ].join('\n');
 
   if (opts.manual) {
@@ -153,5 +153,5 @@ export async function installClaude(opts: ClaudeInstallOptions): Promise<void> {
   }
 
   console.log('');
-  console.log('Run /reload-plugins in Claude Code to activate, or restart Claude Code.');
+  console.log("⚠ Fully restart Claude Code. SpotMe's PreToolUse hook won't load without it.");
 }

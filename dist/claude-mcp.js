@@ -18821,7 +18821,6 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     case "spotme_intercept_write": {
       const toolName = a.tool_name ?? "";
       const filePath = a.file_path ?? "";
-      console.error(`[spotme] intercept tool=${toolName} file=${filePath} args=${JSON.stringify(a)}`);
       const result = engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
