@@ -74,6 +74,38 @@ The first you fix by going to the gym.
 
 ## Install
 
+### Claude Code
+
+SpotMe ships with a small installer CLI that generates a local Claude plugin marketplace and registers it. Install the CLI with [bun](https://bun.sh):
+
+```bash
+bun add -g github:bge-kernel-panic/spotme
+```
+
+This puts a `spotme` binary in `~/.bun/bin`. Make sure that directory is on your `PATH`.
+
+Then register the Claude plugin:
+
+```bash
+spotme install claude
+```
+
+This will:
+1. Generate the marketplace under `~/.spotme/claude-marketplace/`
+2. Run `claude plugin marketplace add` and `claude plugin install spotme` for you (or print the commands if `claude` is not on your `PATH`)
+
+Reload plugins in Claude Code:
+
+```
+/reload-plugins
+```
+
+The MCP server starts automatically, the `PreToolUse` hook intercepts `Write`/`Edit`/`MultiEdit` to count code writes, and the `/spotme:*` commands become available.
+
+Useful flags:
+- `--yes` — skip confirmation prompts
+- `--manual` — write the plugin files but don't run any `claude` CLI commands (prints them instead)
+
 ### OpenCode
 
 Add to your `opencode.json`:
@@ -82,6 +114,13 @@ Add to your `opencode.json`:
     "$schema": "https://opencode.ai/config.json",
     "plugin": ["spotme"]
 }
+```
+
+Or use the installer CLI to do it safely (preserves comments in `.jsonc`):
+
+```bash
+spotme install opencode               # writes to ~/.config/opencode/opencode.json
+spotme install opencode --scope project  # writes to ./opencode.json
 ```
 
 ### Pi (WIP)
@@ -115,7 +154,28 @@ Copy `SKILL.md` into your harness's skills directory. This gives the prompt laye
 
 ## Local Development
 
-To develop and test a branch locally:
+### Build
+
+```bash
+git clone https://github.com/bge-kernel-panic/spotme.git
+cd spotme
+bun install
+bun run build      # builds both bun targets (OpenCode/Pi) and node targets (CLI/MCP)
+```
+
+Other useful scripts:
+
+| Script | Purpose |
+|---|---|
+| `bun run build` | Build everything (bun + node targets) |
+| `bun run build:node` | Build only node targets (`dist/cli.js`, `dist/claude-mcp.js`) — what the Claude installer needs |
+| `bun test` | Run the test suite (engine, prompts, installer) |
+| `bun run typecheck` | TypeScript check (no emit) |
+| `bun run lint` | ESLint |
+
+The node-target bundles (`dist/cli.js`, `dist/claude-mcp.js`) are committed to git so `bun add -g github:...` installs work without a build step. Rebuild and re-commit those whenever you change the CLI, the MCP server, the installer, or the prompts.
+
+### Test locally on OpenCode/Pi
 
 ```bash
 # 1. Clone SpotMe locally
@@ -130,6 +190,24 @@ mkdir ./test_spotme && cd ./test_spotme
 ```
 
 Then, in `test_spotme`, open your agent harness (OpenCode, Pi...) and verify spotme commands exist. Finally, checkout the SpotMe branch you need.
+
+### Test locally on Claude Code
+
+Install your local build directly with `bun link`, or push to a branch and pull from GitHub:
+
+```bash
+# From the spotme repo:
+bun run build:node
+git add -A && git commit -m "..." && git push
+
+# On the test machine:
+bun remove -g spotme            # if previously installed
+rm -rf ~/.bun/install/cache     # clear bun's git cache
+bun add -g github:bge-kernel-panic/spotme
+rm -rf ~/.spotme/claude-marketplace   # clear stale plugin artifacts
+spotme install claude --yes
+# Then /reload-plugins in Claude Code
+```
 
 ## Name
 

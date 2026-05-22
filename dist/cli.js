@@ -278,7 +278,7 @@ function generateArtifacts(opts) {
           hooks: [
             {
               type: "mcp_tool",
-              server: "plugin_spotme_spotme",
+              server: "plugin:spotme:spotme",
               tool: "spotme_intercept_write"
             }
           ]

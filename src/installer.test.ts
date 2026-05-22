@@ -63,7 +63,7 @@ describe('generateArtifacts', () => {
     const entry = hooks.hooks.PreToolUse[0];
     expect(entry.matcher).toBe('Write|Edit|MultiEdit');
     expect(entry.hooks[0].type).toBe('mcp_tool');
-    expect(entry.hooks[0].server).toBe('plugin_spotme_spotme');
+    expect(entry.hooks[0].server).toBe('plugin:spotme:spotme');
     expect(entry.hooks[0].tool).toBe('spotme_intercept_write');
   });
 
