@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { applyEdits, modify, parseTree, findNodeAtLocation } from 'jsonc-parser';
+import { applyEdits, modify, parseTree, findNodeAtLocation } from 'jsonc-parser/lib/esm/main.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

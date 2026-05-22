@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'bun:test';
 import { generateArtifacts } from './installer/artifacts.js';
-import { applyEdits, modify, parseTree, findNodeAtLocation } from 'jsonc-parser';
+import { applyEdits, modify, parseTree, findNodeAtLocation } from 'jsonc-parser/lib/esm/main.js';
 
 // ─── generateArtifacts ────────────────────────────────────────────────────────
 
