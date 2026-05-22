@@ -250,8 +250,8 @@ function generateArtifacts(opts) {
   const files = {};
   files[".claude-plugin/marketplace.json"] = JSON.stringify({
     name: "spotme-local",
-    owner: { name: "wtfzambo" },
-    plugins: [{ name: "spotme", path: "./plugins/spotme" }]
+    owner: { name: "bge-kernel-panic" },
+    plugins: [{ name: "spotme", source: "./plugins/spotme" }]
   }, null, 2);
   files["plugins/spotme/.claude-plugin/plugin.json"] = JSON.stringify({
     name: "spotme",

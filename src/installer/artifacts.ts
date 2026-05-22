@@ -99,7 +99,7 @@ export function generateArtifacts(opts: ArtifactOptions): GeneratedArtifacts {
     {
       name: 'spotme-local',
       owner: { name: 'bge-kernel-panic' },
-      plugins: [{ name: 'spotme', path: './plugins/spotme' }],
+      plugins: [{ name: 'spotme', source: './plugins/spotme' }],
     },
     null,
     2
