@@ -174,10 +174,10 @@ ${overrides.all}` : base;
   return result;
 }
 var CLAUDE_PROMPTS = buildPrompts({
-  on: "Call `mcp__plugin_spotme_spotme__spotme_on` with $ARGUMENTS. Call `mcp__plugin_spotme_spotme__spotme_status` and confirm the settings in one sentence.",
+  on: 'Call `mcp__plugin_spotme_spotme__spotme_on` with "$ARGUMENTS" (may be empty — defaults will be used). Then call `mcp__plugin_spotme_spotme__spotme_status` and confirm the settings in one sentence.',
   off: "Call `mcp__plugin_spotme_spotme__spotme_off`. Confirm SpotMe is off and you will resume coding normally.",
   status: "Call `mcp__plugin_spotme_spotme__spotme_status` and display the result to the user.",
-  rep: "Call `mcp__plugin_spotme_spotme__spotme_start_rep` with $ARGUMENTS as the hint. Follow the returned instructions exactly: write the scaffold file, then call `mcp__plugin_spotme_spotme__spotme_exercise`. Display the full return value verbatim. Stop.",
+  rep: 'Call `mcp__plugin_spotme_spotme__spotme_start_rep` with "$ARGUMENTS" as the hint (may be empty). Follow the returned instructions exactly: write the scaffold file, then call `mcp__plugin_spotme_spotme__spotme_exercise`. Display the full return value verbatim. Stop.',
   done: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Evaluate: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
   hint: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Give one targeted hint — point toward the approach without solving it. One paragraph max.",
   solve: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Write the solution (replace SPOTME marker or improve user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
@@ -278,7 +278,7 @@ function generateArtifacts(opts) {
           hooks: [
             {
               type: "mcp_tool",
-              server: "spotme",
+              server: "plugin_spotme_spotme",
               tool: "spotme_intercept_write"
             }
           ]

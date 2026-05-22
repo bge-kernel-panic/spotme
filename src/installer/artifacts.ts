@@ -144,7 +144,7 @@ export function generateArtifacts(opts: ArtifactOptions): GeneratedArtifacts {
             hooks: [
               {
                 type: 'mcp_tool',
-                server: 'spotme',
+                server: 'plugin_spotme_spotme',
                 tool: 'spotme_intercept_write',
               },
             ],
