@@ -105,13 +105,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         type: 'object' as const,
         properties: {
           tool_name: { type: 'string', description: 'Name of the intercepted tool' },
-          tool_input: {
-            type: 'object',
-            description: 'Tool input payload (must contain file_path or path)',
-            additionalProperties: true,
-          },
+          file_path: { type: 'string', description: 'Path of the file being written' },
         },
-        required: ['tool_name', 'tool_input'],
+        required: ['tool_name', 'file_path'],
       },
     },
   ],
@@ -160,8 +156,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
     case 'spotme_intercept_write': {
       const toolName = (a.tool_name as string | undefined) ?? '';
-      const toolInput = a.tool_input as { file_path?: string; path?: string } | undefined;
-      const filePath = toolInput?.file_path ?? toolInput?.path ?? '';
+      const filePath = (a.file_path as string | undefined) ?? '';
       // eslint-disable-next-line no-console
       console.error(
         `[spotme] intercept tool=${toolName} file=${filePath} args=${JSON.stringify(a)}`

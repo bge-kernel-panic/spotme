@@ -1,5 +1,5 @@
 // ─── Shared types and constants ─────────────────────────────────────────────
-// probe
+// probe 2
 
 export type Difficulty = 'lite' | 'medium' | 'hard';
 

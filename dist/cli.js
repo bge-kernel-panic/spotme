@@ -279,7 +279,11 @@ function generateArtifacts(opts) {
             {
               type: "mcp_tool",
               server: "plugin:spotme:spotme",
-              tool: "spotme_intercept_write"
+              tool: "spotme_intercept_write",
+              input: {
+                tool_name: "${tool_name}",
+                file_path: "${tool_input.file_path}"
+              }
             }
           ]
         }
