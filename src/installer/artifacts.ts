@@ -97,7 +97,8 @@ export function generateArtifacts(opts: ArtifactOptions): GeneratedArtifacts {
   // Marketplace manifest
   files['.claude-plugin/marketplace.json'] = JSON.stringify(
     {
-      name: 'SpotMe Local',
+      name: 'spotme-local',
+      owner: { name: 'bge-kernel-panic' },
       plugins: [{ name: 'spotme', path: './plugins/spotme' }],
     },
     null,

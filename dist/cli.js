@@ -249,7 +249,8 @@ function generateArtifacts(opts) {
   const pluginDir = `${pluginRoot}/plugins/spotme`;
   const files = {};
   files[".claude-plugin/marketplace.json"] = JSON.stringify({
-    name: "SpotMe Local",
+    name: "spotme-local",
+    owner: { name: "wtfzambo" },
     plugins: [{ name: "spotme", path: "./plugins/spotme" }]
   }, null, 2);
   files["plugins/spotme/.claude-plugin/plugin.json"] = JSON.stringify({
