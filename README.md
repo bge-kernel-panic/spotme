@@ -101,11 +101,11 @@ Copy `SKILL.md` into your harness's skills directory. This gives the prompt laye
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=wtfzambo%2Fspotme&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=bge-kernel-panic%2Fspotme&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=wtfzambo/spotme&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=wtfzambo/spotme&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=wtfzambo/spotme&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=bge-kernel-panic/spotme&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=bge-kernel-panic/spotme&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=bge-kernel-panic/spotme&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -120,7 +120,7 @@ To develop and test a branch locally:
 ```bash
 # 1. Clone SpotMe locally
 mkdir ~/temp && cd ~/temp
-git clone https://github.com/wtfzambo/spotme.git
+git clone https://github.com/bge-kernel-panic/spotme.git
 
 # 2. Create a new directory somewhere
 mkdir ./test_spotme && cd ./test_spotme
