@@ -35,7 +35,7 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
     "test": "bun test",
-    "prepare": "bun install && bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node"
+    "prepare": "bun install --ignore-scripts && bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node"
   },
   "keywords": [
     "pi-package",
