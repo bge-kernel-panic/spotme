@@ -82,9 +82,9 @@ export async function installClaude(opts: ClaudeInstallOptions): Promise<void> {
   const pluginDir = join(marketplaceDir, 'plugins', 'spotme');
 
   const selfDir = dirname(fileURLToPath(import.meta.url));
-  const mcpJsPath = resolve(selfDir, '../claude-mcp.js');
+  const mcpJsPath = resolve(selfDir, 'claude-mcp.js');
 
-  const pkgPath = resolve(selfDir, '../../package.json');
+  const pkgPath = resolve(selfDir, '..', 'package.json');
   const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { version: string };
   const packageVersion = pkg.version;
 

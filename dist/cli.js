@@ -337,8 +337,8 @@ async function installClaude(opts) {
   const marketplaceDir = join(homedir(), ".spotme", "claude-marketplace");
   const pluginDir = join(marketplaceDir, "plugins", "spotme");
   const selfDir = dirname(fileURLToPath(import.meta.url));
-  const mcpJsPath = resolve(selfDir, "../claude-mcp.js");
-  const pkgPath = resolve(selfDir, "../../package.json");
+  const mcpJsPath = resolve(selfDir, "claude-mcp.js");
+  const pkgPath = resolve(selfDir, "..", "package.json");
   const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
   const packageVersion = pkg.version;
   const { files } = generateArtifacts({ packageVersion, pluginRoot: marketplaceDir, mcpJsPath });
