@@ -1,5 +1,7 @@
-# Build output
-dist/
+# Build output — bun targets gitignored, node targets committed
+dist/*
+!dist/cli.js
+!dist/claude-mcp.js
 
 # Dependencies
 node_modules/

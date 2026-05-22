@@ -34,8 +34,7 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
-    "test": "bun test",
-    "prepare": "bun install --ignore-scripts && bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node"
+    "test": "bun test"
   },
   "keywords": [
     "pi-package",
@@ -66,7 +65,6 @@
     "@typescript-eslint/eslint-plugin": "8.47.0",
     "@typescript-eslint/parser": "8.47.0",
     "backlog.md": "^1.45.1",
-    "bun": "latest",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "^5.1.3",
