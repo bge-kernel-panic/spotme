@@ -29,42 +29,42 @@ interface SkillDef {
 const SKILLS: Record<string, SkillDef> = {
   on: {
     description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
-    allowedTools: 'mcp__spotme__spotme_on mcp__spotme__spotme_status',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_on mcp__plugin_spotme_spotme__spotme_status',
     content: CLAUDE_PROMPTS.ON,
   },
   off: {
     description: 'Disable SpotMe gym mode',
-    allowedTools: 'mcp__spotme__spotme_off',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_off',
     content: CLAUDE_PROMPTS.OFF,
   },
   status: {
     description: 'Show current SpotMe status',
-    allowedTools: 'mcp__spotme__spotme_status',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status',
     content: CLAUDE_PROMPTS.STATUS,
   },
   rep: {
     description: 'Request an on-demand SpotMe exercise [hint text]',
-    allowedTools: 'mcp__spotme__spotme_start_rep mcp__spotme__spotme_exercise Write Edit MultiEdit',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_start_rep mcp__plugin_spotme_spotme__spotme_exercise Write Edit MultiEdit',
     content: CLAUDE_PROMPTS.REP,
   },
   done: {
     description: 'Submit your implementation for SpotMe review',
-    allowedTools: 'mcp__spotme__spotme_status mcp__spotme__spotme_end Read',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read',
     content: CLAUDE_PROMPTS.DONE,
   },
   hint: {
     description: 'Get a targeted hint for the current exercise',
-    allowedTools: 'mcp__spotme__spotme_status Read',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status Read',
     content: CLAUDE_PROMPTS.HINT,
   },
   solve: {
     description: 'Concede — let the agent complete the exercise',
-    allowedTools: 'mcp__spotme__spotme_status mcp__spotme__spotme_end Read Write Edit MultiEdit',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit',
     content: CLAUDE_PROMPTS.SOLVE,
   },
   skip: {
     description: 'Skip this exercise',
-    allowedTools: 'mcp__spotme__spotme_end',
+    allowedTools: 'mcp__plugin_spotme_spotme__spotme_end',
     content: CLAUDE_PROMPTS.SKIP,
   },
 };

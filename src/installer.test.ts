@@ -73,7 +73,7 @@ describe('generateArtifacts', () => {
     expect(onSkill).toContain('name: spotme:on');
     expect(onSkill).toContain('user-invocable: true');
     expect(onSkill).toContain('disable-model-invocation: true');
-    expect(onSkill).toContain('mcp__spotme__spotme_on');
+    expect(onSkill).toContain('mcp__plugin_spotme_spotme__spotme_on');
   });
 });
 

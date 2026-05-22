@@ -183,13 +183,13 @@ export function buildPrompts(overrides?: PromptOverrides): Record<PromptKey, str
 // ─── Claude-specific prompts ─────────────────────────────────────────────────
 
 export const CLAUDE_PROMPTS: Record<PromptKey, string> = buildPrompts({
-  on: 'Call `mcp__spotme__spotme_on` with $ARGUMENTS. Call `mcp__spotme__spotme_status` and confirm the settings in one sentence.',
-  off: 'Call `mcp__spotme__spotme_off`. Confirm SpotMe is off and you will resume coding normally.',
-  status: 'Call `mcp__spotme__spotme_status` and display the result to the user.',
-  rep: 'Call `mcp__spotme__spotme_start_rep` with $ARGUMENTS as the hint. Follow the returned instructions exactly: write the scaffold file, then call `mcp__spotme__spotme_exercise`. Display the full return value verbatim. Stop.',
-  done: 'Call `mcp__spotme__spotme_status` to get the active exercise. Read the exercise file. Evaluate: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task. Call `mcp__spotme__spotme_end` as the LAST thing you do.',
-  hint: 'Call `mcp__spotme__spotme_status` to get the active exercise. Read the exercise file. Give one targeted hint — point toward the approach without solving it. One paragraph max.',
+  on: 'Call `mcp__plugin_spotme_spotme__spotme_on` with $ARGUMENTS. Call `mcp__plugin_spotme_spotme__spotme_status` and confirm the settings in one sentence.',
+  off: 'Call `mcp__plugin_spotme_spotme__spotme_off`. Confirm SpotMe is off and you will resume coding normally.',
+  status: 'Call `mcp__plugin_spotme_spotme__spotme_status` and display the result to the user.',
+  rep: 'Call `mcp__plugin_spotme_spotme__spotme_start_rep` with $ARGUMENTS as the hint. Follow the returned instructions exactly: write the scaffold file, then call `mcp__plugin_spotme_spotme__spotme_exercise`. Display the full return value verbatim. Stop.',
+  done: 'Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Evaluate: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.',
+  hint: 'Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Give one targeted hint — point toward the approach without solving it. One paragraph max.',
   solve:
-    "Call `mcp__spotme__spotme_status` to get the active exercise. Read the exercise file. Write the solution (replace SPOTME marker or improve user's work). Note the key pattern to remember. Resume original task. Call `mcp__spotme__spotme_end` as the LAST thing you do.",
-  skip: 'Call `mcp__spotme__spotme_end` first. Then resume the original task and complete the code normally.',
+    "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Write the solution (replace SPOTME marker or improve user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
+  skip: 'Call `mcp__plugin_spotme_spotme__spotme_end` first. Then resume the original task and complete the code normally.',
 });

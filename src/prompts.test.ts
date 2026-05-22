@@ -39,23 +39,23 @@ describe('buildPrompts', () => {
 });
 
 describe('CLAUDE_PROMPTS', () => {
-  it('contains mcp__spotme__ references', () => {
-    expect(CLAUDE_PROMPTS.ON).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.OFF).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.STATUS).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.REP).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.DONE).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.HINT).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.SOLVE).toContain('mcp__spotme__');
-    expect(CLAUDE_PROMPTS.SKIP).toContain('mcp__spotme__');
+  it('contains mcp__plugin_spotme_spotme__ references', () => {
+    expect(CLAUDE_PROMPTS.ON).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.OFF).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.STATUS).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.REP).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.DONE).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.HINT).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.SOLVE).toContain('mcp__plugin_spotme_spotme__');
+    expect(CLAUDE_PROMPTS.SKIP).toContain('mcp__plugin_spotme_spotme__');
   });
 });
 
 describe('PROMPTS', () => {
-  it('does not contain mcp__spotme__ references', () => {
+  it('does not contain mcp__plugin_spotme_spotme__ references', () => {
     const keys = Object.keys(PROMPTS) as Array<keyof typeof PROMPTS>;
     for (const key of keys) {
-      expect(PROMPTS[key]).not.toContain('mcp__spotme__');
+      expect(PROMPTS[key]).not.toContain('mcp__plugin_spotme_spotme__');
     }
   });
 });
