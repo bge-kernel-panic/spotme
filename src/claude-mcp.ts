@@ -104,10 +104,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: 'object' as const,
         properties: {
-          toolName: { type: 'string', description: 'Name of the tool being intercepted' },
-          filePath: { type: 'string', description: 'File path argument from the tool call' },
+          tool_name: { type: 'string', description: 'Name of the intercepted tool' },
+          tool_input: {
+            type: 'object',
+            description: 'Tool input payload (must contain file_path or path)',
+            additionalProperties: true,
+          },
         },
-        required: ['toolName', 'filePath'],
+        required: ['tool_name', 'tool_input'],
       },
     },
   ],
@@ -155,10 +159,10 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     }
 
     case 'spotme_intercept_write': {
-      const result = engine.interceptWriteToolCall(
-        a.toolName as string,
-        (a.filePath as string | undefined) ?? ''
-      );
+      const toolName = (a.tool_name as string | undefined) ?? '';
+      const toolInput = a.tool_input as { file_path?: string; path?: string } | undefined;
+      const filePath = toolInput?.file_path ?? toolInput?.path ?? '';
+      const result = engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
           content: [
