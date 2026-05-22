@@ -7,7 +7,7 @@ import { applyEdits, modify, parseTree, findNodeAtLocation } from 'jsonc-parser/
 // ─── generateArtifacts ────────────────────────────────────────────────────────
 
 const ARTIFACT_OPTS = {
-  packageVersion: '1.1.0',
+  packageVersion: '0.0.0-test',
   pluginRoot: '/home/user/.spotme/claude-marketplace',
   mcpJsPath: '/home/user/.spotme/claude-marketplace/plugins/spotme/dist/claude-mcp.js',
 };
@@ -33,7 +33,7 @@ describe('generateArtifacts', () => {
     const pluginJson = JSON.parse(files['plugins/spotme/.claude-plugin/plugin.json']) as {
       version: string;
     };
-    expect(pluginJson.version).toMatch(/^1\.1\.0-local\.\d+$/);
+    expect(pluginJson.version).toMatch(/^0\.0\.0-test-local\.\d+$/);
   });
 
   it('.mcp.json contains CLAUDE_PLUGIN_ROOT placeholder', () => {
