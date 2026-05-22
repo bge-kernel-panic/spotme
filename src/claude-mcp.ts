@@ -162,13 +162,23 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       const toolName = (a.tool_name as string | undefined) ?? '';
       const toolInput = a.tool_input as { file_path?: string; path?: string } | undefined;
       const filePath = toolInput?.file_path ?? toolInput?.path ?? '';
+      // eslint-disable-next-line no-console
+      console.error(
+        `[spotme] intercept tool=${toolName} file=${filePath} args=${JSON.stringify(a)}`
+      );
       const result = engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({ decision: 'deny', reason: result.message }),
+              text: JSON.stringify({
+                hookSpecificOutput: {
+                  hookEventName: 'PreToolUse',
+                  permissionDecision: 'deny',
+                  permissionDecisionReason: result.message,
+                },
+              }),
             },
           ],
         };

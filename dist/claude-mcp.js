@@ -18826,13 +18826,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       const toolName = a.tool_name ?? "";
       const toolInput = a.tool_input;
       const filePath = toolInput?.file_path ?? toolInput?.path ?? "";
+      console.error(`[spotme] intercept tool=${toolName} file=${filePath} args=${JSON.stringify(a)}`);
       const result = engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ decision: "deny", reason: result.message })
+              text: JSON.stringify({
+                hookSpecificOutput: {
+                  hookEventName: "PreToolUse",
+                  permissionDecision: "deny",
+                  permissionDecisionReason: result.message
+                }
+              })
             }
           ]
         };
