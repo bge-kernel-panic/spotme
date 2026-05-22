@@ -1,15 +1,20 @@
 {
   "name": "spotme",
   "version": "1.1.0",
-  "description": "SpotMe — gym mode for agentic coding. Works with OpenCode and Pi.",
+  "description": "SpotMe — gym mode for agentic coding. Works with OpenCode, Pi, and Claude Code.",
   "author": {
     "name": "wtfzambo"
   },
   "type": "module",
   "main": "./dist/index.js",
+  "bin": {
+    "spotme": "./dist/cli.js"
+  },
   "exports": {
     ".": "./dist/index.js",
-    "./opencode": "./dist/opencode.js"
+    "./opencode": "./dist/opencode.js",
+    "./claude-mcp": "./dist/claude-mcp.js",
+    "./cli": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -23,11 +28,13 @@
     "url": "git+https://github.com/wtfzambo/spotme.git"
   },
   "scripts": {
-    "build": "bun build src/index.ts src/opencode.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts src/opencode.ts --outdir dist --target bun && bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "test": "bun test",
+    "prepare": "bun run build"
   },
   "keywords": [
     "pi-package",
@@ -46,8 +53,10 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "latest",
+    "@modelcontextprotocol/sdk": "^1.12.0",
     "@opencode-ai/plugin": "^1.14.0",
-    "@sinclair/typebox": "^0.34.0"
+    "@sinclair/typebox": "^0.34.0",
+    "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -56,6 +65,7 @@
     "@typescript-eslint/eslint-plugin": "8.47.0",
     "@typescript-eslint/parser": "8.47.0",
     "backlog.md": "^1.45.1",
+    "bun": "latest",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "^5.1.3",

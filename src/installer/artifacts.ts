@@ -1,0 +1,167 @@
+// ─── Claude plugin artifact generator ───────────────────────────────────────
+// Generates all file contents for the local Claude marketplace/plugin.
+// Does NOT write to disk — returns a map of relative path → content.
+
+import { CLAUDE_PROMPTS } from '../prompts.js';
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+export interface ArtifactOptions {
+  packageVersion: string;
+  pluginRoot: string;
+  mcpJsPath: string;
+}
+
+export interface GeneratedArtifacts {
+  marketplaceDir: string;
+  pluginDir: string;
+  files: Record<string, string>;
+}
+
+// ─── Skill definitions ──────────────────────────────────────────────────────
+
+interface SkillDef {
+  description: string;
+  allowedTools: string;
+  content: string;
+}
+
+const SKILLS: Record<string, SkillDef> = {
+  on: {
+    description: 'Enable SpotMe gym mode [lite|medium|hard] [--every N]',
+    allowedTools: 'mcp__spotme__spotme_on mcp__spotme__spotme_status',
+    content: CLAUDE_PROMPTS.ON,
+  },
+  off: {
+    description: 'Disable SpotMe gym mode',
+    allowedTools: 'mcp__spotme__spotme_off',
+    content: CLAUDE_PROMPTS.OFF,
+  },
+  status: {
+    description: 'Show current SpotMe status',
+    allowedTools: 'mcp__spotme__spotme_status',
+    content: CLAUDE_PROMPTS.STATUS,
+  },
+  rep: {
+    description: 'Request an on-demand SpotMe exercise [hint text]',
+    allowedTools: 'mcp__spotme__spotme_start_rep mcp__spotme__spotme_exercise Write Edit MultiEdit',
+    content: CLAUDE_PROMPTS.REP,
+  },
+  done: {
+    description: 'Submit your implementation for SpotMe review',
+    allowedTools: 'mcp__spotme__spotme_status mcp__spotme__spotme_end Read',
+    content: CLAUDE_PROMPTS.DONE,
+  },
+  hint: {
+    description: 'Get a targeted hint for the current exercise',
+    allowedTools: 'mcp__spotme__spotme_status Read',
+    content: CLAUDE_PROMPTS.HINT,
+  },
+  solve: {
+    description: 'Concede — let the agent complete the exercise',
+    allowedTools: 'mcp__spotme__spotme_status mcp__spotme__spotme_end Read Write Edit MultiEdit',
+    content: CLAUDE_PROMPTS.SOLVE,
+  },
+  skip: {
+    description: 'Skip this exercise',
+    allowedTools: 'mcp__spotme__spotme_end',
+    content: CLAUDE_PROMPTS.SKIP,
+  },
+};
+
+function skillFile(name: string, def: SkillDef): string {
+  return [
+    '---',
+    `name: spotme:${name}`,
+    `description: ${def.description}`,
+    'user-invocable: true',
+    'disable-model-invocation: true',
+    `allowed-tools: ${def.allowedTools}`,
+    '---',
+    '',
+    def.content,
+    '',
+  ].join('\n');
+}
+
+// ─── Artifact generation ─────────────────────────────────────────────────────
+
+export function generateArtifacts(opts: ArtifactOptions): GeneratedArtifacts {
+  const { packageVersion, pluginRoot } = opts;
+  const timestamp = Date.now();
+  const marketplaceDir = pluginRoot;
+  const pluginDir = `${pluginRoot}/plugins/spotme`;
+
+  const files: Record<string, string> = {};
+
+  // Marketplace manifest
+  files['.claude-plugin/marketplace.json'] = JSON.stringify(
+    {
+      name: 'SpotMe Local',
+      plugins: [{ name: 'spotme', path: './plugins/spotme' }],
+    },
+    null,
+    2
+  );
+
+  // Plugin manifest
+  files['plugins/spotme/.claude-plugin/plugin.json'] = JSON.stringify(
+    {
+      name: 'spotme',
+      version: `${packageVersion}-local.${timestamp}`,
+      description: 'SpotMe — gym mode for agentic coding. Works with Claude Code.',
+      author: 'wtfzambo',
+    },
+    null,
+    2
+  );
+
+  // MCP server config
+  files['plugins/spotme/.mcp.json'] = JSON.stringify(
+    {
+      mcpServers: {
+        spotme: {
+          command: 'node',
+          args: ['${CLAUDE_PLUGIN_ROOT}/dist/claude-mcp.js'],
+          env: { SPOTME_PROJECT_DIR: '${CLAUDE_PROJECT_DIR}' },
+          alwaysLoad: true,
+        },
+      },
+    },
+    null,
+    2
+  );
+
+  // Hooks
+  files['plugins/spotme/hooks/hooks.json'] = JSON.stringify(
+    {
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: 'Write|Edit|MultiEdit',
+            hooks: [
+              {
+                type: 'mcp_tool',
+                server: 'spotme',
+                tool: 'spotme_intercept_write',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    null,
+    2
+  );
+
+  // Skill files
+  for (const [name, def] of Object.entries(SKILLS)) {
+    files[`plugins/spotme/skills/${name}/SKILL.md`] = skillFile(name, def);
+  }
+
+  // MCP JS bundle (copied from build output)
+  // The actual copying happens in the installer; we record the source path here.
+  // The installer writes opts.mcpJsPath content to plugins/spotme/dist/claude-mcp.js.
+
+  return { marketplaceDir, pluginDir, files };
+}

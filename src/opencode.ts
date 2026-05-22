@@ -6,18 +6,23 @@ import { SpotMeEngine } from './engine.js';
 import { PROMPTS } from './prompts.js';
 import type { Difficulty } from './types.js';
 
+const WRITE_TOOLS = new Set(['write', 'edit', 'patch', 'create']);
+
 export const SpotMePlugin: Plugin = async ({ directory, client }) => {
   const engine = new SpotMeEngine({
-    resolvePath(rawPath) {
-      const fullPath = rawPath.startsWith('/') ? rawPath : `${directory}/${rawPath}`;
-      const relativePath = fullPath.startsWith(`${directory}/`)
-        ? fullPath.slice(directory.length + 1)
-        : rawPath;
-      return { fullPath, relativePath };
+    platform: {
+      resolvePath(rawPath) {
+        const fullPath = rawPath.startsWith('/') ? rawPath : `${directory}/${rawPath}`;
+        const relativePath = fullPath.startsWith(`${directory}/`)
+          ? fullPath.slice(directory.length + 1)
+          : rawPath;
+        return { fullPath, relativePath };
+      },
+      async fileExists(fullPath) {
+        return Bun.file(fullPath).exists();
+      },
     },
-    async fileExists(fullPath) {
-      return Bun.file(fullPath).exists();
-    },
+    codeWriteTools: WRITE_TOOLS,
   });
 
   // ─── Tools ──────────────────────────────────────────────────────────────
@@ -84,6 +89,16 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
     },
   });
 
+  const spotme_start_rep = tool({
+    description: 'Start an on-demand SpotMe exercise. Call BEFORE writing the scaffold.',
+    args: {
+      args: tool.schema.string().default('').describe('Optional hint for the exercise topic'),
+    },
+    async execute(a) {
+      return engine.startRep(a.args).message;
+    },
+  });
+
   // ─── Commands ─────────────────────────────────────────────────────────────
 
   const commands: Record<string, { description: string; template: string }> = {
@@ -122,7 +137,7 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
       }
     },
 
-    tool: { spotme_on, spotme_exercise, spotme_status, spotme_end },
+    tool: { spotme_on, spotme_exercise, spotme_status, spotme_end, spotme_start_rep },
 
     'tool.execute.before': async (input, output) => {
       const filePath = (output.args?.filePath ?? output.args?.path ?? '') as string;

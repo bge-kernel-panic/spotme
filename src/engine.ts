@@ -1,9 +1,9 @@
 // ─── SpotMe Engine ─────────────────────────────────────────────────────────
-// Platform-agnostic core logic. Adapters (OpenCode, Pi, etc.) delegate here.
+// Platform-agnostic core logic. Adapters (OpenCode, Pi, Claude, etc.) delegate here.
 
 import { blockedMessage, exerciseReadyMessage, statusMessage } from './prompts.js';
 import type { Difficulty, SpotMeState } from './types.js';
-import { CODE_EXTENSIONS, CODE_WRITE_TOOLS, parseArgs } from './types.js';
+import { CODE_EXTENSIONS, parseArgs } from './types.js';
 
 // ─── Platform adapter interface ─────────────────────────────────────────────
 
@@ -13,6 +13,13 @@ export interface PlatformAdapter {
 
   /** Return true if the file at `fullPath` exists on disk. */
   fileExists(_fullPath: string): Promise<boolean>;
+}
+
+// ─── Engine constructor options ──────────────────────────────────────────────
+
+export interface EngineOptions {
+  platform: PlatformAdapter;
+  codeWriteTools: ReadonlySet<string>;
 }
 
 // ─── Return types for engine methods ────────────────────────────────────────
@@ -26,6 +33,10 @@ export interface ExerciseResult {
   filePath: string;
 }
 
+export interface StartRepResult {
+  message: string;
+}
+
 export type WriteInterceptResult = { blocked: false } | { blocked: true; message: string };
 
 // ─── Engine ─────────────────────────────────────────────────────────────────
@@ -33,10 +44,13 @@ export type WriteInterceptResult = { blocked: false } | { blocked: true; message
 export class SpotMeEngine {
   readonly state: SpotMeState;
   private exercisePending = false;
+  private repBypassNext = false;
   private readonly platform: PlatformAdapter;
+  private readonly codeWriteTools: ReadonlySet<string>;
 
-  constructor(platform: PlatformAdapter) {
+  constructor({ platform, codeWriteTools }: EngineOptions) {
     this.platform = platform;
+    this.codeWriteTools = codeWriteTools;
     this.state = {
       enabled: false,
       difficulty: 'medium',
@@ -79,9 +93,32 @@ export class SpotMeEngine {
     this.state.exercise = null;
     this.state.counter = 0;
     this.exercisePending = false;
+    this.repBypassNext = false;
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
+
+  /**
+   * Start an on-demand rep. Sets exercisePending and repBypassNext so the
+   * next scaffold write is allowed through without triggering another exercise.
+   */
+  startRep(args?: string): StartRepResult {
+    this.exercisePending = true;
+    this.repBypassNext = true;
+
+    const difficulty = this.state.difficulty;
+    const steps = [
+      '[SpotMe] On-demand rep started.',
+      'Follow these steps:',
+      '1. Write the scaffold using Write or Edit. Include a SPOTME marker.',
+      `2. Call \`spotme_exercise\` with the unit name, file path, and difficulty "${difficulty}".`,
+      '3. Display the full return value verbatim.',
+    ].join('\n');
+
+    const message = args && args.trim().length > 0 ? `Hint: ${args.trim()}.\n${steps}` : steps;
+
+    return { message };
+  }
 
   /**
    * Record an exercise start. Called by the spotme_exercise tool AFTER the
@@ -120,6 +157,7 @@ export class SpotMeEngine {
     this.state.exercise = null;
     this.state.counter = 0;
     this.exercisePending = false;
+    this.repBypassNext = false;
     return '✅ Exercise closed. Counter reset. Resuming normal mode.';
   }
 
@@ -141,11 +179,17 @@ export class SpotMeEngine {
   interceptWriteToolCall(toolName: string, filePath: string): WriteInterceptResult {
     if (!this.state.enabled) return { blocked: false };
 
-    // Bypass: scaffold write in progress, or exercise active (user implementing).
+    // One-shot bypass for the scaffold write in a startRep flow.
+    if (this.repBypassNext) {
+      this.repBypassNext = false;
+      return { blocked: false };
+    }
+
+    // Bypass: exercise active (user implementing).
     if (this.exercisePending || this.state.exercise?.active) return { blocked: false };
 
     // Only count code-writing tools.
-    if (!CODE_WRITE_TOOLS.has(toolName)) return { blocked: false };
+    if (!this.codeWriteTools.has(toolName)) return { blocked: false };
 
     // Only count code files (allowlist).
     const ext = filePath.split('.').pop()?.toLowerCase() ?? '';

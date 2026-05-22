@@ -9,7 +9,8 @@ import { join } from 'path';
 import { SpotMeEngine } from './engine.js';
 import { PROMPTS } from './prompts.js';
 import type { Difficulty } from './types.js';
-import { CODE_WRITE_TOOLS } from './types.js';
+
+const PI_WRITE_TOOLS = new Set(['write', 'edit', 'patch', 'create']);
 
 export default function (pi: ExtensionAPI) {
   // Engine is instantiated lazily per-command since Pi doesn't provide cwd at init.
@@ -17,22 +18,25 @@ export default function (pi: ExtensionAPI) {
   let engineCwd: string | null = null;
 
   const engine = new SpotMeEngine({
-    resolvePath(rawPath) {
-      const cwd = engineCwd ?? process.cwd();
-      const fullPath = rawPath.startsWith('/') ? rawPath : join(cwd, rawPath);
-      const relativePath = fullPath.startsWith(cwd + '/')
-        ? fullPath.slice(cwd.length + 1)
-        : rawPath;
-      return { fullPath, relativePath };
+    platform: {
+      resolvePath(rawPath) {
+        const cwd = engineCwd ?? process.cwd();
+        const fullPath = rawPath.startsWith('/') ? rawPath : join(cwd, rawPath);
+        const relativePath = fullPath.startsWith(cwd + '/')
+          ? fullPath.slice(cwd.length + 1)
+          : rawPath;
+        return { fullPath, relativePath };
+      },
+      async fileExists(fullPath) {
+        try {
+          await access(fullPath);
+          return true;
+        } catch {
+          return false;
+        }
+      },
     },
-    async fileExists(fullPath) {
-      try {
-        await access(fullPath);
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    codeWriteTools: PI_WRITE_TOOLS,
   });
 
   // ─── Tool: spotme_exercise ─────────────────────────────────────────────
@@ -126,7 +130,7 @@ export default function (pi: ExtensionAPI) {
   // ─── Hook: intercept code-writing tool calls ──────────────────────────
 
   pi.on('tool_call', async (event) => {
-    if (!CODE_WRITE_TOOLS.has(event.toolName)) return;
+    if (!PI_WRITE_TOOLS.has(event.toolName)) return;
 
     const filePath =
       isToolCallEventType('write', event) || isToolCallEventType('edit', event)
