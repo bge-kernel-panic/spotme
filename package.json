@@ -29,12 +29,13 @@
   },
   "scripts": {
     "build": "bun build src/index.ts src/opencode.ts --outdir dist --target bun && bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node",
+    "build:node": "bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
     "test": "bun test",
-    "prepare": "bun run build"
+    "prepare": "bun build src/cli.ts src/claude-mcp.ts --outdir dist --target node"
   },
   "keywords": [
     "pi-package",
