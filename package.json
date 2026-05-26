@@ -40,7 +40,7 @@
     "extensions": [
       "./src/pi.ts"
     ],
-    "image": "https://raw.githubusercontent.com/wtfzambo/spotme/refs/heads/main/imgs/pi.png"
+    "image": "https://raw.githubusercontent.com/wtfzambo/spotme/refs/heads/main/imgs/spotme.png"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.14.0",
