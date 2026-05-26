@@ -13,8 +13,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "index.ts"
+    "src"
   ],
   "publishConfig": {
     "access": "public"
@@ -39,7 +38,7 @@
   ],
   "pi": {
     "extensions": [
-      "./index.ts"
+      "./src/pi.ts"
     ],
     "image": "https://raw.githubusercontent.com/wtfzambo/spotme/refs/heads/main/imgs/spotme.png"
   },
