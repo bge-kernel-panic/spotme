@@ -1,6 +1,6 @@
 {
   "name": "spotme",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "SpotMe — gym mode for agentic coding. Works with OpenCode, Pi, and Claude Code.",
   "author": {
     "name": "bge-kernel-panic"
