@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // ─── OpenCode install flow ───────────────────────────────────────────────────
-// Adds spotme to the OpenCode plugins list in opencode.json/opencode.jsonc.
+// Adds spotme to the OpenCode plugin list in opencode.json/opencode.jsonc.
 
 import { createInterface } from 'node:readline';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -32,11 +32,10 @@ async function confirm(question: string): Promise<boolean> {
 function addSpotmeToPlugins(source: string): string {
   const tree = parseTree(source);
 
-  // Check if spotme is already present in plugins array
   if (tree) {
-    const pluginsNode = findNodeAtLocation(tree, ['plugins']);
-    if (pluginsNode?.type === 'array' && pluginsNode.children) {
-      const alreadyPresent = pluginsNode.children.some(
+    const pluginNode = findNodeAtLocation(tree, ['plugin']);
+    if (pluginNode?.type === 'array' && pluginNode.children) {
+      const alreadyPresent = pluginNode.children.some(
         (child) => child.type === 'string' && child.value === 'spotme'
       );
       if (alreadyPresent) return source;
@@ -44,7 +43,7 @@ function addSpotmeToPlugins(source: string): string {
   }
 
   const existing = source.trim() === '' ? '{}' : source;
-  const edits = modify(existing, ['plugins', -1], 'spotme', { formattingOptions: {} });
+  const edits = modify(existing, ['plugin', -1], 'spotme', { formattingOptions: {} });
   return applyEdits(existing, edits);
 }
 
@@ -80,14 +79,14 @@ export async function installOpenCode(opts: OpenCodeInstallOptions): Promise<voi
       ? resolve(homedir(), '.config/opencode/opencode.json')
       : resolve('./opencode.json');
 
-  const configChange = `Add "spotme" to the plugins array in:\n  ${targetPath}`;
+  const configChange = `Add "spotme" to the plugin array in:\n  ${targetPath}`;
 
   if (opts.manual) {
     console.log('OpenCode install (manual mode):');
     console.log(configChange);
     console.log('');
-    console.log('Add "spotme" to the plugins array in your opencode.json:');
-    console.log('  { "plugins": ["spotme"] }');
+    console.log('Add "spotme" to the plugin array in your opencode.json:');
+    console.log('  { "plugin": ["spotme"] }');
     return;
   }
 

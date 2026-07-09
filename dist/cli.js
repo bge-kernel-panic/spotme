@@ -1734,15 +1734,15 @@ async function confirm2(question) {
 function addSpotmeToPlugins(source) {
   const tree = parseTree2(source);
   if (tree) {
-    const pluginsNode = findNodeAtLocation2(tree, ["plugins"]);
-    if (pluginsNode?.type === "array" && pluginsNode.children) {
-      const alreadyPresent = pluginsNode.children.some((child) => child.type === "string" && child.value === "spotme");
+    const pluginNode = findNodeAtLocation2(tree, ["plugin"]);
+    if (pluginNode?.type === "array" && pluginNode.children) {
+      const alreadyPresent = pluginNode.children.some((child) => child.type === "string" && child.value === "spotme");
       if (alreadyPresent)
         return source;
     }
   }
   const existing = source.trim() === "" ? "{}" : source;
-  const edits = modify(existing, ["plugins", -1], "spotme", { formattingOptions: {} });
+  const edits = modify(existing, ["plugin", -1], "spotme", { formattingOptions: {} });
   return applyEdits(existing, edits);
 }
 function diffLines(before, after) {
@@ -1771,14 +1771,14 @@ function diffLines(before, after) {
 }
 async function installOpenCode(opts) {
   const targetPath = opts.configPath ? resolve2(opts.configPath) : opts.scope === "user" ? resolve2(homedir2(), ".config/opencode/opencode.json") : resolve2("./opencode.json");
-  const configChange = `Add "spotme" to the plugins array in:
+  const configChange = `Add "spotme" to the plugin array in:
   ${targetPath}`;
   if (opts.manual) {
     console.log("OpenCode install (manual mode):");
     console.log(configChange);
     console.log("");
-    console.log('Add "spotme" to the plugins array in your opencode.json:');
-    console.log('  { "plugins": ["spotme"] }');
+    console.log('Add "spotme" to the plugin array in your opencode.json:');
+    console.log('  { "plugin": ["spotme"] }');
     return;
   }
   let existing = "{}";

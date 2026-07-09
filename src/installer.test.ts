@@ -83,9 +83,9 @@ function addSpotmeToPlugins(source: string): string {
   const tree = parseTree(source);
 
   if (tree) {
-    const pluginsNode = findNodeAtLocation(tree, ['plugins']);
-    if (pluginsNode?.type === 'array' && pluginsNode.children) {
-      const alreadyPresent = pluginsNode.children.some(
+    const pluginNode = findNodeAtLocation(tree, ['plugin']);
+    if (pluginNode?.type === 'array' && pluginNode.children) {
+      const alreadyPresent = pluginNode.children.some(
         (child) => child.type === 'string' && child.value === 'spotme'
       );
       if (alreadyPresent) return source;
@@ -93,34 +93,34 @@ function addSpotmeToPlugins(source: string): string {
   }
 
   const existing = source.trim() === '' ? '{}' : source;
-  const edits = modify(existing, ['plugins', -1], 'spotme', { formattingOptions: {} });
+  const edits = modify(existing, ['plugin', -1], 'spotme', { formattingOptions: {} });
   return applyEdits(existing, edits);
 }
 
 describe('OpenCode jsonc mutation', () => {
-  it('adds spotme to empty plugins array', () => {
+  it('given empty config, when adding spotme, then creates plugin array', () => {
     const result = addSpotmeToPlugins('{}');
-    const parsed = JSON.parse(result) as { plugins?: string[] };
-    expect(parsed.plugins).toContain('spotme');
+    const parsed = JSON.parse(result) as { plugin?: string[] };
+    expect(parsed.plugin).toContain('spotme');
   });
 
-  it('adds spotme to existing plugins array', () => {
-    const result = addSpotmeToPlugins(JSON.stringify({ plugins: ['other'] }));
-    const parsed = JSON.parse(result) as { plugins?: string[] };
-    expect(parsed.plugins).toContain('spotme');
-    expect(parsed.plugins).toContain('other');
+  it('given existing plugin array, when adding spotme, then preserves entries', () => {
+    const result = addSpotmeToPlugins(JSON.stringify({ plugin: ['other'] }));
+    const parsed = JSON.parse(result) as { plugin?: string[] };
+    expect(parsed.plugin).toContain('spotme');
+    expect(parsed.plugin).toContain('other');
   });
 
-  it('is a no-op if spotme already present', () => {
-    const input = JSON.stringify({ plugins: ['spotme'] });
+  it('given spotme already present, when adding spotme, then leaves source unchanged', () => {
+    const input = JSON.stringify({ plugin: ['spotme'] });
     const result = addSpotmeToPlugins(input);
     expect(result).toBe(input);
   });
 
-  it('creates plugins array when not present', () => {
+  it('given no plugin array, when adding spotme, then preserves other config', () => {
     const result = addSpotmeToPlugins(JSON.stringify({ tools: [] }));
-    const parsed = JSON.parse(result) as { plugins?: string[]; tools?: unknown[] };
-    expect(parsed.plugins).toContain('spotme');
+    const parsed = JSON.parse(result) as { plugin?: string[]; tools?: unknown[] };
+    expect(parsed.plugin).toContain('spotme');
     expect(parsed.tools).toEqual([]);
   });
 });
