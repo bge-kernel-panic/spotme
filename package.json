@@ -1,6 +1,6 @@
 {
   "name": "spotme",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "SpotMe — gym mode for agentic coding. Works with OpenCode, Pi, and Claude Code.",
   "author": {
     "name": "bge-kernel-panic"
@@ -47,19 +47,23 @@
     "extensions": [
       "./src/pi.ts"
     ],
-    "skills": [
-      "."
-    ]
+    "image": "https://raw.githubusercontent.com/wtfzambo/spotme/refs/heads/main/imgs/spotme.png"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "latest",
-    "@modelcontextprotocol/sdk": "^1.12.0",
     "@opencode-ai/plugin": "^1.14.0",
     "@sinclair/typebox": "^0.34.0",
     "jsonc-parser": "^3.3.1"
   },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@earendil-works/pi-coding-agent": "^0.74.0",
     "@types/bun": "^1.1.0",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "8.47.0",

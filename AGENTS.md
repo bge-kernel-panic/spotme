@@ -17,6 +17,10 @@ bun run lint
 bun run build
 ```
 
+## SpotMe flow
+
+All adapters MUST implement the canonical state machine documented in `docs/flow.md`. Read it before touching any adapter code.
+
 ## Claude Code plugin gotchas
 
 When iterating on the Claude plugin (artifacts, hooks, MCP server):

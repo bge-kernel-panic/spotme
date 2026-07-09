@@ -18471,11 +18471,39 @@ var PROMPTS = {
   ON: "SpotMe gym mode was just activated. Call `spotme_status` to get the current settings, then confirm them to the user in one sentence.",
   OFF: "Confirm that SpotMe gym mode is now off and you will resume writing code normally.",
   STATUS: "Call the `spotme_status` tool and display the result to the user.",
-  DONE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1-2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.",
   HINT: "Give one targeted hint for the current SpotMe exercise. Point toward the approach without revealing the implementation. One paragraph max.",
-  SOLVE: "Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern the user should remember. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.",
-  SKIP: "The human is skipping this exercise. Resume the original task and complete the code normally. Call `spotme_end` as the LAST thing you do.",
-  REP: "The human wants a coding exercise. Write the scaffold for the next logical unit using the Write tool (use a `# SPOTME: <description>` marker where the human should implement), then call `spotme_exercise` with the unit name, file path, and difficulty."
+  REP: "The human wants a coding exercise. Write the scaffold for the next logical unit using the Write tool (use a `# SPOTME: <description>` marker where the human should implement), then call `spotme_exercise` with the unit name, file path, and difficulty.",
+  get DONE() {
+    return this.done();
+  },
+  get SOLVE() {
+    return this.solve();
+  },
+  get SKIP() {
+    return this.skip();
+  },
+  done(exercise) {
+    if (exercise) {
+      return `Current SpotMe exercise: **${exercise.unit}** in \`${exercise.filePath}\`.
+
+Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1-2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call \`spotme_end\` as the LAST thing you do.`;
+    }
+    return "Call `spotme_status` to get the active exercise details. Read the exercise file. Evaluate the user's implementation: (1) what they got right — 1-2 sentences, specific; (2) what could be better — concrete, no vague feedback; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.";
+  },
+  solve(exercise) {
+    if (exercise) {
+      return `Current SpotMe exercise: **${exercise.unit}** in \`${exercise.filePath}\`.
+
+Read the exercise file. Write the solution (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern the user should remember. Resume the original task and complete any remaining code. Call \`spotme_end\` as the LAST thing you do.`;
+    }
+    return "Call `spotme_status` to get the active exercise details. Read the exercise file. Write the solution (replace the SPOTME marker if still present, or improve what the user wrote). Briefly note the key pattern the user should remember. Resume the original task and complete any remaining code. Call `spotme_end` as the LAST thing you do.";
+  },
+  skip(exercise) {
+    if (exercise) {
+      return `The human is skipping the SpotMe exercise **${exercise.unit}** in \`${exercise.filePath}\`. Resume the original task and complete the code normally. Call \`spotme_end\` as the LAST thing you do.`;
+    }
+    return "The human is skipping this exercise. Resume the original task and complete the code normally. Call `spotme_end` as the LAST thing you do.";
+  }
 };
 function buildPrompts(overrides) {
   const keys = Object.keys(PROMPTS);
