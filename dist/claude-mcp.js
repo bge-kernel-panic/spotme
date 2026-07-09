@@ -3743,7 +3743,7 @@ var require_fast_uri = __commonJS((exports, module) => {
       if (!options.unicodeSupport && (!schemeHandler || !schemeHandler.unicodeSupport)) {
         if (parsed.host && (options.domainHost || schemeHandler && schemeHandler.domainHost) && isIP === false && nonSimpleDomain(parsed.host)) {
           try {
-            parsed.host = URL.domainToASCII(parsed.host.toLowerCase());
+            parsed.host = new URL("http://" + parsed.host).hostname;
           } catch (e) {
             parsed.error = parsed.error || "Host's domain name can not be converted to ASCII: " + e;
           }
