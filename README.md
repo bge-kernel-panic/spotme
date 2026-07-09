@@ -124,7 +124,7 @@ spotme install opencode --scope project  # writes to ./opencode.json
 Install as a Pi package:
 
 ```bash
-pi install git:githob.com/bge-kernel-panic/spotme
+pi install git:github.com/bge-kernel-panic/spotme
 ```
 
 SpotMe integrates as a Pi extension with programmatic slash commands and custom tools (`spotme_exercise`, `spotme_end`, `spotme_status`). Commands that don't require LLM reasoning (`/spotme:on`, `/spotme:off`, `/spotme:status`) execute instantly via the Pi UI. Commands that need LLM input (`/spotme:done`, `/spotme:solve`, `/spotme:skip`, `/spotme:hint`, `/spotme:rep`) inject exercise details directly into the prompt for seamless review.
