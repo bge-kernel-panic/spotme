@@ -4,9 +4,10 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { isToolCallEventType } from '@earendil-works/pi-coding-agent';
 import { Type } from '@sinclair/typebox';
-import { access } from 'fs/promises';
+import { access, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { SpotMeEngine } from './engine.js';
+import { gitIgnored } from './git.js';
 import { PROMPTS } from './prompts.js';
 import type { Difficulty } from './types.js';
 
@@ -35,6 +36,9 @@ export default function (pi: ExtensionAPI) {
           return false;
         }
       },
+      readFile: (fullPath) => readFile(fullPath, 'utf8'),
+      writeFile: (fullPath, content) => writeFile(fullPath, content, 'utf8'),
+      isIgnored: (fullPath) => gitIgnored(engineCwd ?? process.cwd(), fullPath),
     },
     codeWriteTools: PI_WRITE_TOOLS,
   });
@@ -151,6 +155,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify('No active SpotMe exercise to solve.', 'warning');
         return;
       }
+      await engine.concede();
       pi.sendUserMessage(PROMPTS.solve({ unit: ex.unit, filePath: ex.filePath }));
     },
   });
@@ -163,6 +168,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify('No active SpotMe exercise to skip.', 'warning');
         return;
       }
+      await engine.concede();
       pi.sendUserMessage(PROMPTS.skip({ unit: ex.unit, filePath: ex.filePath }));
     },
   });
@@ -184,7 +190,7 @@ export default function (pi: ExtensionAPI) {
         ? event.input.path
         : '';
 
-    const result = engine.interceptWriteToolCall(event.toolName, filePath);
+    const result = await engine.interceptWriteToolCall(event.toolName, filePath);
     if (result.blocked) {
       return { block: true, reason: result.message };
     }

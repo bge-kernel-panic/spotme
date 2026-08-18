@@ -5,9 +5,10 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { access } from 'fs/promises';
+import { access, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { SpotMeEngine } from './engine.js';
+import { gitIgnored } from './git.js';
 import type { Difficulty } from './types.js';
 
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit']);
@@ -36,6 +37,9 @@ const engine = new SpotMeEngine({
         return false;
       }
     },
+    readFile: (fullPath) => readFile(fullPath, 'utf8'),
+    writeFile: (fullPath, content) => writeFile(fullPath, content, 'utf8'),
+    isIgnored: (fullPath) => gitIgnored(projectDir, fullPath),
   },
   codeWriteTools: WRITE_TOOLS,
 });
@@ -99,6 +103,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: 'object' as const, properties: {} },
     },
     {
+      name: 'spotme_concede',
+      description:
+        'Clear the SPOTME marker from the active exercise file so you can edit it. Call BEFORE writing during /spotme:solve or /spotme:skip.',
+      inputSchema: { type: 'object' as const, properties: {} },
+    },
+    {
       name: 'spotme_intercept_write',
       description: 'Hook called before Write/Edit/MultiEdit. Returns deny decision when blocking.',
       inputSchema: {
@@ -154,10 +164,19 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       return { content: [{ type: 'text' as const, text: engine.endExercise() }] };
     }
 
+    case 'spotme_concede': {
+      await engine.concede();
+      return {
+        content: [
+          { type: 'text' as const, text: 'Marker cleared. You may now edit the exercise file.' },
+        ],
+      };
+    }
+
     case 'spotme_intercept_write': {
       const toolName = (a.tool_name as string | undefined) ?? '';
       const filePath = (a.file_path as string | undefined) ?? '';
-      const result = engine.interceptWriteToolCall(toolName, filePath);
+      const result = await engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
           content: [

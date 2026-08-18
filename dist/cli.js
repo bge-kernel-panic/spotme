@@ -110,6 +110,16 @@ function commentForFile(filePath) {
   const syntax = EXT_COMMENT[ext] ?? { open: "//" };
   return syntax.close ? `${syntax.open} SPOTME: <description> ${syntax.close}` : `${syntax.open} SPOTME: <description>`;
 }
+var MARKER_TOKEN = "SPOTME";
+function lineIsMarker(line, filePath) {
+  if (!line.includes(MARKER_TOKEN))
+    return false;
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  const syntax = EXT_COMMENT[ext];
+  if (!syntax)
+    return true;
+  return line.trimStart().startsWith(syntax.open);
+}
 function statusMessage(state) {
   const lines = [
     `SpotMe: ${state.enabled ? "\uD83D\uDFE2 on" : "⚪ off"}`,
@@ -129,7 +139,11 @@ function exerciseReadyMessage(unit, filePath, difficulty) {
     `Difficulty: ${difficulty} — ${difficultyLabel(difficulty)}`,
     `File: \`${filePath}\``,
     ``,
-    `Edit the file in your editor. Replace the \`# SPOTME:\` marker with your implementation.`,
+    `⛔ AGENT: STOP HERE. This exercise belongs to the human, not you.`,
+    `Do NOT write, edit, or complete this code. Do not "help" by filling it in.`,
+    `Wait for the human to run \`/spotme:done\`, \`/spotme:solve\`, or \`/spotme:skip\`.`,
+    ``,
+    `Human: edit the file in your editor. Replace the \`SPOTME:\` marker with your implementation.`,
     ``,
     `Your options:`,
     `  \`/spotme:hint\`  — get a targeted hint`,
@@ -145,10 +159,22 @@ function blockedMessage(toolName, filePath, difficulty) {
   return [
     `[SpotMe] Counter reached — time for an exercise!`,
     ``,
-    `Follow these steps in order:`,
+    `Write ONLY the scaffold with the marker. Do NOT implement the body — that is the human's job.`,
+    ``,
+    `Follow these steps in order, then STOP:`,
     `1. ${scaffoldStep}`,
     `2. Call \`spotme_exercise\` with the unit name, the file path, and difficulty "${difficulty}".`,
-    `3. Display the full return value of \`spotme_exercise\` verbatim to the user (do not summarize).`
+    `3. Display the full return value of \`spotme_exercise\` verbatim to the user (do not summarize).`,
+    `4. STOP. Do not write, edit, or complete the exercise. Hand control back to the human.`
+  ].join(`
+`);
+}
+function protectedFileMessage(filePath) {
+  return [
+    `⛔ [SpotMe] \`${filePath}\` is an active exercise for the human — you cannot edit it.`,
+    `It still contains a SPOTME marker. Leave this file alone.`,
+    `To take over, the human runs \`/spotme:solve\`; to move on, \`/spotme:skip\`.`,
+    `Do not attempt to write this file again until then.`
   ].join(`
 `);
 }
@@ -208,8 +234,8 @@ var CLAUDE_PROMPTS = buildPrompts({
   rep: 'Call `mcp__plugin_spotme_spotme__spotme_start_rep` with "$ARGUMENTS" as the hint (may be empty). Follow the returned instructions exactly: write the scaffold file, then call `mcp__plugin_spotme_spotme__spotme_exercise`. Display the full return value verbatim. Stop.',
   done: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Evaluate: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
   hint: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Give one targeted hint — point toward the approach without solving it. One paragraph max.",
-  solve: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Write the solution (replace SPOTME marker or improve user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
-  skip: "Call `mcp__plugin_spotme_spotme__spotme_end` first. Then resume the original task and complete the code normally."
+  solve: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Call `mcp__plugin_spotme_spotme__spotme_concede` to clear the marker so you can edit the file. Read the exercise file. Write the solution (complete the implementation or improve the user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
+  skip: "Call `mcp__plugin_spotme_spotme__spotme_concede` to clear the marker. Then resume the original task and complete the code normally. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do."
 });
 
 // src/installer/artifacts.ts
@@ -246,12 +272,12 @@ var SKILLS = {
   },
   solve: {
     description: "Concede — let the agent complete the exercise",
-    allowedTools: "mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit",
+    allowedTools: "mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_concede mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit",
     content: CLAUDE_PROMPTS.SOLVE
   },
   skip: {
     description: "Skip this exercise",
-    allowedTools: "mcp__plugin_spotme_spotme__spotme_end",
+    allowedTools: "mcp__plugin_spotme_spotme__spotme_concede mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit",
     content: CLAUDE_PROMPTS.SKIP
   }
 };

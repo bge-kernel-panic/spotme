@@ -1,7 +1,13 @@
 // ─── SpotMe Engine ─────────────────────────────────────────────────────────
 // Platform-agnostic core logic. Adapters (OpenCode, Pi, Claude, etc.) delegate here.
 
-import { blockedMessage, exerciseReadyMessage, statusMessage } from './prompts.js';
+import {
+  blockedMessage,
+  exerciseReadyMessage,
+  lineIsMarker,
+  protectedFileMessage,
+  statusMessage,
+} from './prompts.js';
 import type { Difficulty, SpotMeState } from './types.js';
 import { CODE_EXTENSIONS, parseArgs } from './types.js';
 
@@ -13,6 +19,15 @@ export interface PlatformAdapter {
 
   /** Return true if the file at `fullPath` exists on disk. */
   fileExists(_fullPath: string): Promise<boolean>;
+
+  /** Read the file at `fullPath` as UTF-8 text. */
+  readFile(_fullPath: string): Promise<string>;
+
+  /** Write UTF-8 `content` to `fullPath`, overwriting. */
+  writeFile(_fullPath: string, _content: string): Promise<void>;
+
+  /** True if the file at `fullPath` is ignored by git (skip scanning it). */
+  isIgnored(_fullPath: string): Promise<boolean>;
 }
 
 // ─── Engine constructor options ──────────────────────────────────────────────
@@ -152,6 +167,26 @@ export class SpotMeEngine {
     };
   }
 
+  /**
+   * Concede the active exercise: strip the SPOTME marker from the exercise file
+   * so /solve and /skip can write to it (the block only refuses marker-bearing
+   * files). Leaves the scaffold structure intact. No-op if no active exercise.
+   */
+  async concede(): Promise<void> {
+    const ex = this.state.exercise;
+    if (!ex?.active) return;
+
+    const { fullPath } = this.platform.resolvePath(ex.filePath);
+    if (!(await this.platform.fileExists(fullPath))) return;
+
+    const content = await this.platform.readFile(fullPath);
+    const stripped = content
+      .split('\n')
+      .filter((line) => !lineIsMarker(line, ex.filePath))
+      .join('\n');
+    if (stripped !== content) await this.platform.writeFile(fullPath, stripped);
+  }
+
   /** Close the current exercise. Called by spotme_end tool. */
   endExercise(): string {
     this.state.exercise = null;
@@ -176,7 +211,7 @@ export class SpotMeEngine {
    * @param toolName - Name of the tool being executed.
    * @param filePath - File path argument from the tool call (may be empty).
    */
-  interceptWriteToolCall(toolName: string, filePath: string): WriteInterceptResult {
+  async interceptWriteToolCall(toolName: string, filePath: string): Promise<WriteInterceptResult> {
     if (!this.state.enabled) return { blocked: false };
 
     // One-shot bypass for the scaffold write in a startRep flow.
@@ -185,8 +220,15 @@ export class SpotMeEngine {
       return { blocked: false };
     }
 
-    // Bypass: exercise active (user implementing).
-    if (this.exercisePending || this.state.exercise?.active) return { blocked: false };
+    // While an exercise is active/pending, protect any code file that still
+    // holds a SPOTME marker — that's the human's work. Every other write passes
+    // so the agent can keep working on the rest of the task.
+    if (this.exercisePending || this.state.exercise?.active) {
+      if (this.codeWriteTools.has(toolName) && (await this.fileHasMarker(filePath))) {
+        return { blocked: true, message: protectedFileMessage(filePath) };
+      }
+      return { blocked: false };
+    }
 
     // Only count code-writing tools.
     if (!this.codeWriteTools.has(toolName)) return { blocked: false };
@@ -206,5 +248,15 @@ export class SpotMeEngine {
     }
 
     return { blocked: false };
+  }
+
+  /** True if the file at `rawPath` currently contains a SPOTME marker on disk. */
+  private async fileHasMarker(rawPath: string): Promise<boolean> {
+    if (!rawPath) return false;
+    const { fullPath } = this.platform.resolvePath(rawPath);
+    if (!(await this.platform.fileExists(fullPath))) return false;
+    if (await this.platform.isIgnored(fullPath)) return false;
+    const content = await this.platform.readFile(fullPath);
+    return content.split('\n').some((line) => lineIsMarker(line, rawPath));
   }
 }

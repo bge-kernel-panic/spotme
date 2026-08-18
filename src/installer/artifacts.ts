@@ -44,12 +44,14 @@ const SKILLS: Record<string, SkillDef> = {
   },
   rep: {
     description: 'Request an on-demand SpotMe exercise [hint text]',
-    allowedTools: 'mcp__plugin_spotme_spotme__spotme_start_rep mcp__plugin_spotme_spotme__spotme_exercise Write Edit MultiEdit',
+    allowedTools:
+      'mcp__plugin_spotme_spotme__spotme_start_rep mcp__plugin_spotme_spotme__spotme_exercise Write Edit MultiEdit',
     content: CLAUDE_PROMPTS.REP,
   },
   done: {
     description: 'Submit your implementation for SpotMe review',
-    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read',
+    allowedTools:
+      'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read',
     content: CLAUDE_PROMPTS.DONE,
   },
   hint: {
@@ -59,12 +61,14 @@ const SKILLS: Record<string, SkillDef> = {
   },
   solve: {
     description: 'Concede — let the agent complete the exercise',
-    allowedTools: 'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit',
+    allowedTools:
+      'mcp__plugin_spotme_spotme__spotme_status mcp__plugin_spotme_spotme__spotme_concede mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit',
     content: CLAUDE_PROMPTS.SOLVE,
   },
   skip: {
     description: 'Skip this exercise',
-    allowedTools: 'mcp__plugin_spotme_spotme__spotme_end',
+    allowedTools:
+      'mcp__plugin_spotme_spotme__spotme_concede mcp__plugin_spotme_spotme__spotme_end Read Write Edit MultiEdit',
     content: CLAUDE_PROMPTS.SKIP,
   },
 };

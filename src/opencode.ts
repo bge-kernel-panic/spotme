@@ -3,6 +3,7 @@
 
 import { type Plugin, tool } from '@opencode-ai/plugin';
 import { SpotMeEngine } from './engine.js';
+import { gitIgnored } from './git.js';
 import { PROMPTS } from './prompts.js';
 import type { Difficulty } from './types.js';
 
@@ -21,6 +22,11 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
       async fileExists(fullPath) {
         return Bun.file(fullPath).exists();
       },
+      readFile: (fullPath) => Bun.file(fullPath).text(),
+      writeFile: async (fullPath, content) => {
+        await Bun.write(fullPath, content);
+      },
+      isIgnored: (fullPath) => gitIgnored(directory, fullPath),
     },
     codeWriteTools: WRITE_TOOLS,
   });
@@ -141,7 +147,7 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
 
     'tool.execute.before': async (input, output) => {
       const filePath = (output.args?.filePath ?? output.args?.path ?? '') as string;
-      const result = engine.interceptWriteToolCall(input.tool, filePath);
+      const result = await engine.interceptWriteToolCall(input.tool, filePath);
       if (result.blocked) throw new Error(result.message);
     },
 
@@ -165,6 +171,13 @@ export const SpotMePlugin: Plugin = async ({ directory, client }) => {
         await client.tui.showToast({
           body: { title: 'SpotMe', message: '⏹️ Off — normal coding resumed', variant: 'info' },
         });
+        return;
+      }
+
+      // Concede clears the marker so the agent's write is allowed through; the
+      // template prompt (sent after this hook) then drives the actual solving.
+      if (command === 'spotme:solve' || command === 'spotme:skip') {
+        await engine.concede();
       }
     },
   };

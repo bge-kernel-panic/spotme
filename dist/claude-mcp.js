@@ -18370,7 +18370,7 @@ class StdioServerTransport {
 }
 
 // src/claude-mcp.ts
-import { access } from "fs/promises";
+import { access, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
 // src/prompts.ts
@@ -18425,6 +18425,16 @@ function commentForFile(filePath) {
   const syntax = EXT_COMMENT[ext] ?? { open: "//" };
   return syntax.close ? `${syntax.open} SPOTME: <description> ${syntax.close}` : `${syntax.open} SPOTME: <description>`;
 }
+var MARKER_TOKEN = "SPOTME";
+function lineIsMarker(line, filePath) {
+  if (!line.includes(MARKER_TOKEN))
+    return false;
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  const syntax = EXT_COMMENT[ext];
+  if (!syntax)
+    return true;
+  return line.trimStart().startsWith(syntax.open);
+}
 function statusMessage(state) {
   const lines = [
     `SpotMe: ${state.enabled ? "\uD83D\uDFE2 on" : "⚪ off"}`,
@@ -18444,7 +18454,11 @@ function exerciseReadyMessage(unit, filePath, difficulty) {
     `Difficulty: ${difficulty} — ${difficultyLabel(difficulty)}`,
     `File: \`${filePath}\``,
     ``,
-    `Edit the file in your editor. Replace the \`# SPOTME:\` marker with your implementation.`,
+    `⛔ AGENT: STOP HERE. This exercise belongs to the human, not you.`,
+    `Do NOT write, edit, or complete this code. Do not "help" by filling it in.`,
+    `Wait for the human to run \`/spotme:done\`, \`/spotme:solve\`, or \`/spotme:skip\`.`,
+    ``,
+    `Human: edit the file in your editor. Replace the \`SPOTME:\` marker with your implementation.`,
     ``,
     `Your options:`,
     `  \`/spotme:hint\`  — get a targeted hint`,
@@ -18460,10 +18474,22 @@ function blockedMessage(toolName, filePath, difficulty) {
   return [
     `[SpotMe] Counter reached — time for an exercise!`,
     ``,
-    `Follow these steps in order:`,
+    `Write ONLY the scaffold with the marker. Do NOT implement the body — that is the human's job.`,
+    ``,
+    `Follow these steps in order, then STOP:`,
     `1. ${scaffoldStep}`,
     `2. Call \`spotme_exercise\` with the unit name, the file path, and difficulty "${difficulty}".`,
-    `3. Display the full return value of \`spotme_exercise\` verbatim to the user (do not summarize).`
+    `3. Display the full return value of \`spotme_exercise\` verbatim to the user (do not summarize).`,
+    `4. STOP. Do not write, edit, or complete the exercise. Hand control back to the human.`
+  ].join(`
+`);
+}
+function protectedFileMessage(filePath) {
+  return [
+    `⛔ [SpotMe] \`${filePath}\` is an active exercise for the human — you cannot edit it.`,
+    `It still contains a SPOTME marker. Leave this file alone.`,
+    `To take over, the human runs \`/spotme:solve\`; to move on, \`/spotme:skip\`.`,
+    `Do not attempt to write this file again until then.`
   ].join(`
 `);
 }
@@ -18523,8 +18549,8 @@ var CLAUDE_PROMPTS = buildPrompts({
   rep: 'Call `mcp__plugin_spotme_spotme__spotme_start_rep` with "$ARGUMENTS" as the hint (may be empty). Follow the returned instructions exactly: write the scaffold file, then call `mcp__plugin_spotme_spotme__spotme_exercise`. Display the full return value verbatim. Stop.',
   done: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Evaluate: (1) what they got right — 1–2 sentences, specific; (2) what could be better — concrete; (3) next steps only if incomplete. Do NOT show your own solution. Resume the original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
   hint: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Give one targeted hint — point toward the approach without solving it. One paragraph max.",
-  solve: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Read the exercise file. Write the solution (replace SPOTME marker or improve user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
-  skip: "Call `mcp__plugin_spotme_spotme__spotme_end` first. Then resume the original task and complete the code normally."
+  solve: "Call `mcp__plugin_spotme_spotme__spotme_status` to get the active exercise. Call `mcp__plugin_spotme_spotme__spotme_concede` to clear the marker so you can edit the file. Read the exercise file. Write the solution (complete the implementation or improve the user's work). Note the key pattern to remember. Resume original task. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do.",
+  skip: "Call `mcp__plugin_spotme_spotme__spotme_concede` to clear the marker. Then resume the original task and complete the code normally. Call `mcp__plugin_spotme_spotme__spotme_end` as the LAST thing you do."
 });
 
 // src/types.ts
@@ -18689,6 +18715,20 @@ ${steps}` : steps;
       filePath: relativePath
     };
   }
+  async concede() {
+    const ex = this.state.exercise;
+    if (!ex?.active)
+      return;
+    const { fullPath } = this.platform.resolvePath(ex.filePath);
+    if (!await this.platform.fileExists(fullPath))
+      return;
+    const content = await this.platform.readFile(fullPath);
+    const stripped = content.split(`
+`).filter((line) => !lineIsMarker(line, ex.filePath)).join(`
+`);
+    if (stripped !== content)
+      await this.platform.writeFile(fullPath, stripped);
+  }
   endExercise() {
     this.state.exercise = null;
     this.state.counter = 0;
@@ -18699,15 +18739,19 @@ ${steps}` : steps;
   getStatus() {
     return statusMessage(this.state);
   }
-  interceptWriteToolCall(toolName, filePath) {
+  async interceptWriteToolCall(toolName, filePath) {
     if (!this.state.enabled)
       return { blocked: false };
     if (this.repBypassNext) {
       this.repBypassNext = false;
       return { blocked: false };
     }
-    if (this.exercisePending || this.state.exercise?.active)
+    if (this.exercisePending || this.state.exercise?.active) {
+      if (this.codeWriteTools.has(toolName) && await this.fileHasMarker(filePath)) {
+        return { blocked: true, message: protectedFileMessage(filePath) };
+      }
       return { blocked: false };
+    }
     if (!this.codeWriteTools.has(toolName))
       return { blocked: false };
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
@@ -18724,6 +18768,33 @@ ${steps}` : steps;
     }
     return { blocked: false };
   }
+  async fileHasMarker(rawPath) {
+    if (!rawPath)
+      return false;
+    const { fullPath } = this.platform.resolvePath(rawPath);
+    if (!await this.platform.fileExists(fullPath))
+      return false;
+    if (await this.platform.isIgnored(fullPath))
+      return false;
+    const content = await this.platform.readFile(fullPath);
+    return content.split(`
+`).some((line) => lineIsMarker(line, rawPath));
+  }
+}
+
+// src/git.ts
+import { execFile } from "node:child_process";
+var cache = new Map;
+function gitIgnored(cwd, fullPath) {
+  const key = `${cwd}\x00${fullPath}`;
+  const cached2 = cache.get(key);
+  if (cached2)
+    return cached2;
+  const result = new Promise((resolve) => {
+    execFile("git", ["check-ignore", "-q", fullPath], { cwd }, (err) => resolve(err == null));
+  });
+  cache.set(key, result);
+  return result;
 }
 
 // src/claude-mcp.ts
@@ -18743,7 +18814,10 @@ var engine = new SpotMeEngine({
       } catch {
         return false;
       }
-    }
+    },
+    readFile: (fullPath) => readFile(fullPath, "utf8"),
+    writeFile: (fullPath, content) => writeFile(fullPath, content, "utf8"),
+    isIgnored: (fullPath) => gitIgnored(projectDir, fullPath)
   },
   codeWriteTools: WRITE_TOOLS
 });
@@ -18803,6 +18877,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} }
     },
     {
+      name: "spotme_concede",
+      description: "Clear the SPOTME marker from the active exercise file so you can edit it. Call BEFORE writing during /spotme:solve or /spotme:skip.",
+      inputSchema: { type: "object", properties: {} }
+    },
+    {
       name: "spotme_intercept_write",
       description: "Hook called before Write/Edit/MultiEdit. Returns deny decision when blocking.",
       inputSchema: {
@@ -18846,10 +18925,18 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     case "spotme_end": {
       return { content: [{ type: "text", text: engine.endExercise() }] };
     }
+    case "spotme_concede": {
+      await engine.concede();
+      return {
+        content: [
+          { type: "text", text: "Marker cleared. You may now edit the exercise file." }
+        ]
+      };
+    }
     case "spotme_intercept_write": {
       const toolName = a.tool_name ?? "";
       const filePath = a.file_path ?? "";
-      const result = engine.interceptWriteToolCall(toolName, filePath);
+      const result = await engine.interceptWriteToolCall(toolName, filePath);
       if (result.blocked) {
         return {
           content: [
